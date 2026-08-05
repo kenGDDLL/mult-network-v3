@@ -127,8 +127,8 @@
       "thresholdMinutes": 75
     }
   },
-  "lastPollIso": "2026-08-05T16:38:02.593280+00:00",
+  "lastPollIso": "2026-08-05T16:42:14.222536+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: N10_X_SQ_SP2_GW1, N1_CloudA_SQ_SP1, N1_CloudA_WUG_HQ_SP1SQ, N3_SMv2_WUG_SP1_Active.",
+  "lastPollNote": "No new heartbeats this cycle.",
   "lastUpdateId": 386355107
 }
