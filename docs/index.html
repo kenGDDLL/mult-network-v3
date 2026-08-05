@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Multi-Network Status Dashboard</title>
+<style>
+  :root {
+    --ink: #1a1d23;
+    --ink-muted: #5a6270;
+    --chrome: #f5f6f8;
+    --chrome-line: #e2e5ea;
+    --card: #ffffff;
+    --good: #0ca30c;
+    --good-bg: #eaf7ea;
+    --warning: #fab219;
+    --warning-bg: #fff6e3;
+    --critical: #d03b3b;
+    --critical-bg: #fdeaea;
+    --unknown: #8a93a3;
+    --unknown-bg: #eef0f3;
+  }
+  [data-theme="dark"] {
+    --ink: #eef0f3;
+    --ink-muted: #a3aab8;
+    --chrome: #14161a;
+    --chrome-line: #2a2d34;
+    --card: #1c1f25;
+    --good-bg: #102a12;
+    --warning-bg: #332a10;
+    --critical-bg: #3a1414;
+    --unknown-bg: #262a31;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--chrome);
+    color: var(--ink);
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--chrome-line);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  h1 { font-size: 20px; margin: 0; }
+  .subtitle { color: var(--ink-muted); font-size: 13px; margin-top: 2px; }
+  .controls { display: flex; gap: 8px; }
+  button.toggle {
+    border: 1px solid var(--chrome-line);
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button.toggle:hover { border-color: var(--ink-muted); }
+  main { padding: 24px 28px; max-width: 1300px; margin: 0 auto; }
+  .banner {
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    display: none;
+  }
+  .banner.show { display: block; }
+  .banner.pending { background: var(--unknown-bg); color: var(--ink-muted); }
+  .banner.stale { background: var(--warning-bg); color: #7a5200; }
+  [data-theme="dark"] .banner.stale { color: var(--warning); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  .stat-tile {
+    background: var(--card);
+    border: 1px solid var(--chrome-line);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-tile .count { font-size: 30px; font-weight: 700; }
+  .stat-tile .label { font-size: 13px; color: var(--ink-muted); margin-top: 2px; }
+  .stat-tile.up .count { color: var(--good); }
+  .stat-tile.down .count { color: var(--critical); }
+  .stat-tile.unknown .count { color: var(--unknown); }
+  .stat-tile.unconfirmed .count { color: var(--warning); }
+  #cardView { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+  .device-card {
+    background: var(--card);
+    border: 1px solid var(--chrome-line);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .device-card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+  .device-card .name { font-weight: 600; font-size: 14px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge.up { background: var(--good-bg); color: var(--good); }
+  .badge.down { background: var(--critical-bg); color: var(--critical); }
+  .badge.unknown { background: var(--unknown-bg); color: var(--unknown); }
+  .device-card .row { font-size: 12.5px; color: var(--ink-muted); margin-top: 4px; }
+  .unconfirmed-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #7a5200;
+    background: var(--warning-bg);
+    border-radius: 6px;
+    padding: 1px 6px;
+    margin-top: 6px;
+  }
+  [data-theme="dark"] .unconfirmed-tag { color: var(--warning); }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; display: none; }
+  table.show { display: table; }
+  #cardView.hide { display: none; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--chrome-line); font-size: 13px; }
+  th { color: var(--ink-muted); font-weight: 600; }
+  footer { text-align: center; color: var(--ink-muted); font-size: 12px; padding: 20px; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Multi-Network Status Dashboard</h1>
+    <div class="subtitle" id="lastPollLine">Loading...</div>
+  </div>
+  <div class="controls">
+    <button class="toggle" id="viewToggle">Table view</button>
+    <button class="toggle" id="themeToggle">Dark mode</button>
+  </div>
+</header>
+<main>
+  <div class="banner pending" id="pendingBanner">Waiting for the first poll to complete.</div>
+  <div class="banner stale" id="staleBanner">The last successful poll was a while ago -- this dashboard may be showing stale data.</div>
+
+  <div class="stats">
+    <div class="stat-tile up"><div class="count" id="upCount">0</div><div class="label">Up</div></div>
+    <div class="stat-tile down"><div class="count" id="downCount">0</div><div class="label">Down</div></div>
+    <div class="stat-tile unknown"><div class="count" id="unknownCount">0</div><div class="label">Unknown</div></div>
+    <div class="stat-tile unconfirmed"><div class="count" id="unconfirmedCount">0</div><div class="label">Unconfirmed schedule</div></div>
+  </div>
+
+  <div id="cardView"></div>
+  <table id="tableView">
+    <thead>
+      <tr><th>Feed</th><th>Status</th><th>Last heartbeat</th><th>Time since</th><th>Threshold</th></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</main>
+<footer>Recomputed client-side every 60 seconds from the last successful poll. Source of truth: GitHub Actions. Feeds marked "unconfirmed" are using a conservative placeholder threshold until the real schedule is confirmed.</footer>
+
+<script type="application/json" id="device-state">
+{
+  "devices": {},
+  "lastPollIso": null,
+  "lastPollOk": false,
+  "lastPollNote": "Never polled yet."
+}
+</script>
+
+<script>
+(function () {
+  var STALE_POLL_MINUTES = 90;
+  // Devices whose threshold is a placeholder (only 1 sample seen when this
+  // dashboard was generated) get a visible "unconfirmed" tag. Keep this
+  // list in sync with the "confirmed": False entries in scripts/sync.py.
+  var UNCONFIRMED_IDS = [
+    "N1_CloudA_WUG_SP1_CCG", "N1_CloudA_WUG_HQ_SGCCG", "N2_CloudB_WUG_SP1_SQ",
+    "N3_SMv1_WUG_HQ_Standby", "N4_CA_WUG_SP1_SQ", "N5_OV_SQ_HQ_GW1",
+    "N5_OV_SQ_HQ_GW2", "N5_OV_WUG_HQ_SQ", "N6_VG_WUG_HQ_GW1", "N6_VG_WUG_HQ_GW2",
+    "N7_CE_WUG_HQ_GW1", "N7_CE_WUG_HQ_GW2", "N8_MG_WUG_SP1_SQ", "N9_FS1_WUG_SP1_CCG"
+  ];
+
+  function readState() {
+    return JSON.parse(document.getElementById("device-state").textContent);
+  }
+
+  function minutesSince(iso) {
+    if (!iso) return null;
+    return (Date.now() - new Date(iso).getTime()) / 60000;
+  }
+
+  function fmtMinutes(mins) {
+    if (mins === null) return "never";
+    if (mins < 60) return Math.round(mins) + "m";
+    var h = Math.floor(mins / 60), m = Math.round(mins % 60);
+    return h + "h " + m + "m";
+  }
+
+  function fmtThreshold(mins) {
+    if (mins < 60) return mins + "m";
+    var h = Math.floor(mins / 60), m = Math.round(mins % 60);
+    return m ? h + "h " + m + "m" : h + "h";
+  }
+
+  function fmtTime(iso) {
+    if (!iso) return "Never";
+    var d = new Date(iso);
+    return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
+  function statusFor(lastSeenIso, thresholdMinutes) {
+    var mins = minutesSince(lastSeenIso);
+    if (mins === null) return "unknown";
+    return mins <= thresholdMinutes ? "up" : "down";
+  }
+
+  function render() {
+    var state = readState();
+    var devices = state.devices || {};
+    var ids = Object.keys(devices);
+
+    var counts = { up: 0, down: 0, unknown: 0 };
+    var unconfirmedCount = 0;
+    var cardHtml = "";
+    var rowHtml = "";
+
+    ids.forEach(function (id) {
+      var dev = devices[id];
+      var threshold = dev.thresholdMinutes;
+      var status = statusFor(dev.lastSeenIso, threshold);
+      counts[status]++;
+      var isUnconfirmed = UNCONFIRMED_IDS.indexOf(id) !== -1;
+      if (isUnconfirmed) unconfirmedCount++;
+      var sinceMins = minutesSince(dev.lastSeenIso);
+      var icon = status === "up" ? "✓" : status === "down" ? "✗" : "?";
+      var label = status === "up" ? "Up" : status === "down" ? "Down" : "Unknown";
+
+      cardHtml +=
+        '<div class="device-card">' +
+          '<div class="top"><div class="name">' + dev.label + '</div>' +
+          '<span class="badge ' + status + '">' + icon + " " + label + "</span></div>" +
+          '<div class="row">Last heartbeat: ' + fmtTime(dev.lastSeenIso) + "</div>" +
+          '<div class="row">Time since: ' + fmtMinutes(sinceMins) + "</div>" +
+          '<div class="row">Threshold: ' + fmtThreshold(threshold) + "</div>" +
+          (isUnconfirmed ? '<div class="unconfirmed-tag">Unconfirmed schedule</div>' : "") +
+        "</div>";
+
+      rowHtml +=
+        "<tr><td>" + dev.label + (isUnconfirmed ? ' <span class="unconfirmed-tag">unconfirmed</span>' : "") + "</td>" +
+        '<td><span class="badge ' + status + '">' + icon + " " + label + "</span></td>" +
+        "<td>" + fmtTime(dev.lastSeenIso) + "</td>" +
+        "<td>" + fmtMinutes(sinceMins) + "</td>" +
+        "<td>" + fmtThreshold(threshold) + "</td></tr>";
+    });
+
+    document.getElementById("cardView").innerHTML = cardHtml;
+    document.getElementById("tableBody").innerHTML = rowHtml;
+    document.getElementById("upCount").textContent = counts.up;
+    document.getElementById("downCount").textContent = counts.down;
+    document.getElementById("unknownCount").textContent = counts.unknown;
+    document.getElementById("unconfirmedCount").textContent = unconfirmedCount;
+
+    var pending = !state.lastPollIso;
+    document.getElementById("pendingBanner").classList.toggle("show", pending);
+
+    var pollAgeMins = minutesSince(state.lastPollIso);
+    var stale = !pending && (pollAgeMins === null || pollAgeMins > STALE_POLL_MINUTES || !state.lastPollOk);
+    document.getElementById("staleBanner").classList.toggle("show", stale);
+
+    var line = pending
+      ? "Waiting for first poll..."
+      : "Last poll: " + fmtTime(state.lastPollIso) + " (" + fmtMinutes(pollAgeMins) + " ago) -- " + (state.lastPollNote || "");
+    document.getElementById("lastPollLine").textContent = line;
+  }
+
+  document.getElementById("viewToggle").addEventListener("click", function () {
+    var cardView = document.getElementById("cardView");
+    var tableView = document.getElementById("tableView");
+    var showingTable = tableView.classList.contains("show");
+    tableView.classList.toggle("show", !showingTable);
+    cardView.classList.toggle("hide", !showingTable);
+    this.textContent = showingTable ? "Table view" : "Card view";
+  });
+
+  document.getElementById("themeToggle").addEventListener("click", function () {
+    var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+    this.textContent = isDark ? "Dark mode" : "Light mode";
+  });
+
+  render();
+  setInterval(render, 60000);
+})();
+</script>
+</body>
+</html>
