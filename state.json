@@ -110,7 +110,7 @@
     },
     "N10_X_SQ_SP2_GW1": {
       "label": "X SQ - SP2 Gateway 1",
-      "lastSeenIso": "2026-08-05T16:38:02.592996+00:00",
+      "lastSeenIso": "2026-08-05T20:47:02.788423+00:00",
       "lastKnownStatus": "up",
       "thresholdMinutes": 75
     },
@@ -127,8 +127,8 @@
       "thresholdMinutes": 75
     }
   },
-  "lastPollIso": "2026-08-05T16:42:14.222536+00:00",
+  "lastPollIso": "2026-08-05T20:47:02.788595+00:00",
   "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386355107
+  "lastPollNote": "Matched heartbeats for: N10_X_SQ_SP2_GW1.",
+  "lastUpdateId": 386355117
 }
