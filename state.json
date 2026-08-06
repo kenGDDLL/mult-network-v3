@@ -2,7 +2,7 @@
   "devices": {
     "N1_CloudA_SQ_SP1": {
       "label": "Cloud A - SQ (SP1)",
-      "lastSeenIso": "2026-08-06T00:11:25.455721+00:00",
+      "lastSeenIso": "2026-08-06T04:10:44.353804+00:00",
       "lastKnownStatus": "up",
       "thresholdMinutes": 990
     },
@@ -110,7 +110,7 @@
     },
     "N10_X_SQ_SP2_GW1": {
       "label": "X SQ - SP2 Gateway 1",
-      "lastSeenIso": "2026-08-06T00:11:25.455652+00:00",
+      "lastSeenIso": "2026-08-06T04:10:44.353841+00:00",
       "lastKnownStatus": "up",
       "thresholdMinutes": 75
     },
@@ -127,8 +127,8 @@
       "thresholdMinutes": 75
     }
   },
-  "lastPollIso": "2026-08-06T00:11:25.455802+00:00",
+  "lastPollIso": "2026-08-06T04:10:44.353877+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: N10_X_SQ_SP2_GW1, N1_CloudA_SQ_SP1, N1_CloudA_WUG_HQ_SP1SQ, N2_CloudB_SQ_SP1, N3_SMv2_WUG_SP1_Active.",
-  "lastUpdateId": 386355126
+  "lastPollNote": "Matched heartbeats for: N10_X_SQ_SP2_GW1, N1_CloudA_SQ_SP1.",
+  "lastUpdateId": 386355129
 }
