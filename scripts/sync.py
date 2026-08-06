@@ -1,18 +1,33 @@
 #!/usr/bin/env python3
 """
-Multi-network Telegram heartbeat -> status dashboard poller.
+Telegram heartbeat -> multi-network status dashboard poller.
 
-This is a variant of the telegram-status-dashboard skill's standard sync.py:
-that template assumes every device shares ONE regex ("<id> is alive") and one
-global down-threshold. This deployment's ~21 feeds each have a *completely
-different* message wording (see DEVICE_CONFIG below) and different check-in
-schedules, so instead each device gets its own compiled pattern and its own
-threshold. The overall architecture and the two correctness rules in
-references/sync-logic.md (persist lastKnownStatus; never skip down-detection
-on fetch failure; only advance the offset after a successful save) are
-unchanged from the standard template.
+Built for a Telegram chat that receives SMS-to-Telegram "is alive" heartbeat
+alerts from ~10 standalone/air-gapped networks, each with its own message
+wording and its own check-in schedule (some hourly, some 3-4x/day, some
+daily).
 
-Run this on a schedule (see .github/workflows/heartbeat-sync.yml).
+Run this on a schedule (see .github/workflows/heartbeat-sync.yml). Each run:
+  1. Polls Telegram's getUpdates for messages newer than the last processed
+     update_id.
+  2. Matches each message against every device's own regex pattern (a single
+     global pattern does not work here -- each network's monitoring tool
+     phrases its heartbeat differently) and records a "last seen" timestamp
+     for whichever device matched.
+  3. If a message matches a device's pattern but does NOT contain "alive"
+     and instead contains an explicit down/fail keyword, that device is
+     marked down immediately (in addition to the normal silence-based
+     detection below).
+  4. Recomputes up/down/unknown status for every device purely from elapsed
+     time vs that device's OWN threshold_minutes. This happens even if the
+     Telegram fetch itself failed, and even if no new message arrived this
+     cycle, because a device can transition to "down" with zero new messages
+     just by going quiet for too long.
+  5. Sends an email alert on any up/unknown -> down transition (not on every
+     cycle a device stays down, to avoid repeat noise).
+  6. Persists state.json and re-renders docs/index.html.
+
+=====================  CONFIGURE THESE FOR YOUR DEPLOYMENT  =====================
 """
 
 import json
@@ -24,204 +39,202 @@ import urllib.request
 from datetime import datetime, timezone
 from email.mime.text import MIMEText
 
-# =====================  DEVICE CONFIG  =====================
-# label:            shown on the dashboard.
-# pattern:          unique regex identifying THIS feed's message. Verified
-#                    against every real sample text with zero cross-matches
-#                    before this file was generated -- see
-#                    scripts/test_patterns.py.
-# threshold_minutes: how many minutes of silence counts as "down" for this
-#                    feed specifically.
-# interval_note:     human-readable schedule, for the dashboard/README only
-#                    -- not used in the down-detection math.
-# confirmed:         True if threshold_minutes was computed from real
-#                    multi-sample evidence; False if it's a conservative
-#                    placeholder (26.5h) because only one sample message was
-#                    available and the real schedule is still unknown. Every
-#                    "confirmed": False entry should be revisited once you
-#                    know the real cadence -- see README.md.
-# alertable:         False suppresses down-transition emails for this device
-#                    (it still shows on the dashboard). Used for the standby
-#                    site, which is expected to be quiet most of the time.
-DEVICE_CONFIG = {
-    "N1_CloudA_SQ_SP1": {
-        "label": "Cloud A - SQ (SP1)",
-        "pattern": re.compile(r"SDC_A_SQ01\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 990,  # 3x/day fixed (08:00/12:00/17:00); longest gap ~15h + buffer
-        "interval_note": "Fixed: 08:00 / 12:00 / 17:00 daily",
-        "confirmed": True,
-        "alertable": True,
+# ---------------------------------------------------------------------------
+# 1. Devices to track. One entry per distinct heartbeat line/link you receive.
+#
+#    - id: short internal key, used in state.json. Don't change once live --
+#      renaming an id makes that device look "new" and drops its history.
+#    - label: human-readable name shown on the dashboard.
+#    - network: which of your standalone networks/links this belongs to,
+#      used to group the dashboard.
+#    - pattern: regex that uniquely identifies this device's heartbeat line.
+#      Verified against your real sample messages -- every sample matched
+#      exactly one device with zero cross-matches (see parser test run).
+#    - interval_minutes: the LONGEST expected gap between two consecutive
+#      real check-ins -- for daytime-only schedules that's the OVERNIGHT
+#      gap, not the average daytime gap (e.g. a device that only checks in
+#      at 08:00/12:00/17:00 goes quiet for 15 hours every single night).
+#      Confirmed against the schedules you provided:
+#        hourly (00:00-23:00):             interval=60
+#        4x/day (00:00/08:00/12:xx/17:xx): interval=480   (max gap 8h)
+#        3x/day (08:00/12:00/17:00):       interval=900   (max gap 15h overnight)
+#        2x/day (~12:0x/17:0x):            interval=1140  (max gap ~19h overnight)
+#        1x/day:                           interval=1440  (max gap 24h)
+#    - threshold_minutes: a FLAT jitter buffer on top of interval_minutes,
+#      per explicit request -- +5 min for Network 10 GW1 (sp2_sms_gw1, the
+#      one truly-hourly device, where fast detection matters most), +10 min
+#      for every other device. This is tighter than the interval-scaled
+#      buffer used earlier (which gave the once-daily devices ~3 hours of
+#      slack) -- a flat +10 min gives those same once-daily devices much
+#      less room to absorb a late SMS-to-Telegram gateway delivery, so if
+#      you start seeing false "down" alerts on a specific device that
+#      correlate with it just being a few minutes late rather than a real
+#      outage, that device's buffer is the first thing to widen back up.
+# ---------------------------------------------------------------------------
+DEVICES = [
+    {
+        "id": "sdc_a_sq01", "label": "SDC_A_SQ01",
+        "network": "Network 1 – Cloud A SQ at SP1",
+        "pattern": re.compile(r"SDC_A_SQ01", re.I),
+        "interval_minutes": 900, "threshold_minutes": 910,  # 3x/day: 08:00/12:00/17:00
     },
-    "N1_CloudA_WUG_SP1_CCG": {
-        "label": "Cloud A - WUG to CCG (SP1)",
-        "pattern": re.compile(r"\bSP\s+CCG\s+is\s+alive\b", re.IGNORECASE),
-        "threshold_minutes": 990,  # only 2 samples (~5h apart) seen; assumed same 3x/day family as SQ sibling
-        "interval_note": "ASSUMED same as SQ sibling (~3x/day) -- only 2 samples seen, please confirm",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "sp1_ccg_a", "label": "SP CCG",
+        "network": "Network 1 – Cloud A WUG at SP1 > SP1_CCG",
+        "pattern": re.compile(r"\bSP\s+CCG\s+is\s+alive", re.I),
+        "interval_minutes": 1140, "threshold_minutes": 1150,  # 2x/day: 12:02/17:02
     },
-    "N1_CloudA_WUG_HQ_SGCCG": {
-        "label": "Cloud A - WUG to SGCCG (HQ, default NMS routing)",
-        "pattern": re.compile(r"SG\s+CCG\s+via\s+SP\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 1590,  # placeholder: only 1 sample seen, schedule unknown
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "sg_ccg_via_sp", "label": "SG CCG via SP",
+        "network": "Network 1 – Cloud A WUG at HQ > SG_CCG (Default NMS routing)",
+        "pattern": re.compile(r"SG\s+CCG\s+via\s+SP", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 17:05
     },
-    "N1_CloudA_WUG_HQ_SP1SQ": {
-        "label": "Cloud A - WUG to SP1SQ (HQ, ITI001)",
-        "pattern": re.compile(r"SG\s+CCG\s+is\s+alive\s+thru\s+SQ", re.IGNORECASE),
-        "threshold_minutes": 540,  # 4x/day fixed (00:00/08:00/12:00/17:05); longest gap ~8h + buffer
-        "interval_note": "Fixed: 00:00 / 08:00 / 12:00 / 17:05 daily",
-        "confirmed": True,
-        "alertable": True,
+    {
+        "id": "sg_ccg_thru_sq", "label": "SG CCG thru SQ [ITI001]",
+        "network": "Network 1 – Cloud A WUG at HQ > SP1_SQ",
+        "pattern": re.compile(r"SG\s+CCG\s+is\s+alive\s+thru\s+SQ", re.I),
+        "interval_minutes": 480, "threshold_minutes": 490,  # 4x/day: 00:00/08:00/12:00/17:05
     },
-    "N2_CloudB_SQ_SP1": {
-        "label": "Cloud B - SQ (SP1)",
-        "pattern": re.compile(r"SDC_B_SQ01\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 990,  # 3x/day fixed (08:00/12:00/17:00); longest gap ~15h + buffer
-        "interval_note": "Fixed: 08:00 / 12:00 / 17:00 daily",
-        "confirmed": True,
-        "alertable": True,
+    {
+        "id": "sdc_b_sq01", "label": "SDC_B_SQ01",
+        "network": "Network 2 – Cloud B SQ at SP1",
+        "pattern": re.compile(r"SDC_B_SQ01", re.I),
+        "interval_minutes": 900, "threshold_minutes": 910,  # 3x/day: 08:00/12:00/17:00
     },
-    "N2_CloudB_WUG_SP1_SQ": {
-        "label": "Cloud B - WUG to SQ (SP1, ITI001)",
-        "pattern": re.compile(r"DSP1\s+WUG\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 1590,  # placeholder: only 1 sample seen, schedule unknown
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "dsp1_wug", "label": "DSP1 WUG [ITI001]",
+        "network": "Network 2 – Cloud B WUG at SP1 > SP1_SQ",
+        "pattern": re.compile(r"DSP1\s+WUG", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 17:05
     },
-    "N3_SMv2_WUG_SP1_Active": {
-        "label": "SM v2 WUG - Active site (SP1)",
-        "pattern": re.compile(r"SM_SP1\s+WUG\s+01\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 540,  # 4x/day fixed (00:00/08:00/12:12/17:00); longest gap ~8h + buffer
-        "interval_note": "Fixed: 00:00 / 08:00 / 12:12 / 17:00 daily",
-        "confirmed": True,
-        "alertable": True,
+    {
+        "id": "sm_sp1_wug01", "label": "SM_SP1 WUG 01 (Active site)",
+        "network": "Network 3 – SM_v2 WUG at SP1 > SP1_SQ",
+        "pattern": re.compile(r"SM_SP1\s+WUG\s+01", re.I),
+        "interval_minutes": 480, "threshold_minutes": 490,  # 4x/day: 00:00/08:00/12:12/17:00
     },
-    "N3_SMv1_WUG_HQ_Standby": {
-        "label": "SM v1 WUG - Standby site (HQ)",
-        "pattern": re.compile(r"\bSM\s+WUG\s+01\s+is\s+alive\b", re.IGNORECASE),
-        "threshold_minutes": 1590,  # placeholder: only 1 sample seen, schedule unknown
-        "interval_note": "UNKNOWN -- standby site, expected to be quiet; alerting suppressed",
-        "confirmed": False,
-        "alertable": False,  # standby -- don't email on this one going quiet
+    {
+        "id": "sm_wug01", "label": "SM WUG 01 (Standby site)",
+        "network": "Network 3 – SM_v1 WUG at HQ > SP1_SQ",
+        "pattern": re.compile(r"(?<!_SP1 )\bSM\s+WUG\s+01", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 12:12
     },
-    "N4_CA_WUG_SP1_SQ": {
-        "label": "CA WUG (SP1, SQ)",
-        "pattern": re.compile(r"\bCA\s+WUG\s+is\s+alive\b", re.IGNORECASE),
-        "threshold_minutes": 1590,
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "ca_wug", "label": "CA WUG",
+        "network": "Network 4 – CA WUG at SP1 > SP1_SQ",
+        "pattern": re.compile(r"\bCA\s+WUG\s+is\s+alive", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 17:00
     },
-    "N5_OV_SQ_HQ_GW1": {
-        "label": "OV SQ - HQ Gateway 1",
-        "pattern": re.compile(r"OV_SMS_GW1\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 1590,
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "ov_sms_gw1", "label": "HQ OV_SMS_GW1",
+        "network": "Network 5 – OV SQ GW1 at HQ",
+        "pattern": re.compile(r"OV_SMS_GW1", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
     },
-    "N5_OV_SQ_HQ_GW2": {
-        "label": "OV SQ - HQ Gateway 2",
-        "pattern": re.compile(r"OV_SMS_GW2\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 1590,
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "ov_sms_gw2", "label": "HQ OV_SMS_GW2",
+        "network": "Network 5 – OV SQ GW2 at HQ",
+        "pattern": re.compile(r"OV_SMS_GW2", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
     },
-    "N5_OV_WUG_HQ_SQ": {
-        "label": "OV WUG (HQ, SQ)",
-        "pattern": re.compile(r"\bOV\s+WUG\s+01\s+is\s+alive\b", re.IGNORECASE),
-        "threshold_minutes": 1590,
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "ov_wug01", "label": "OV WUG 01",
+        "network": "Network 5 – OV WUG at HQ > HQ_SQ",
+        "pattern": re.compile(r"OV\s+WUG\s+01", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 14:02
     },
-    "N6_VG_WUG_HQ_GW1": {
-        "label": "VG WUG - HQ Gateway 1",
-        "pattern": re.compile(r"VG_SMS_GW1\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 1590,
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "vg_sms_gw1", "label": "HQ VG_SMS_GW1",
+        "network": "Network 6 – VG WUG GW1 at HQ > HQ_SQ",
+        "pattern": re.compile(r"VG_SMS_GW1", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
     },
-    "N6_VG_WUG_HQ_GW2": {
-        "label": "VG WUG - HQ Gateway 2",
-        "pattern": re.compile(r"VG_SMS_GW2\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 1590,
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "vg_sms_gw2", "label": "HQ VG_SMS_GW2",
+        "network": "Network 6 – VG WUG GW2 at HQ > HQ_SQ",
+        "pattern": re.compile(r"VG_SMS_GW2", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
     },
-    "N7_CE_WUG_HQ_GW1": {
-        "label": "CE WUG - HQ Gateway 1",
-        "pattern": re.compile(r"CE-_SMS_GW1\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 1590,
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "ce_wug01", "label": "CE-G WUP 01",
+        "network": "Network 7 – CE WUG at HQ > HQ_SQ",
+        "pattern": re.compile(r"CE-G\s+WUP\s+01", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 10:25
     },
-    "N7_CE_WUG_HQ_GW2": {
-        "label": "CE WUG - HQ Gateway 2",
-        "pattern": re.compile(r"CE-_SMS_GW2\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 1590,
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "ce_sms_gw1", "label": "HQ CE-_SMS_GW1",
+        "network": "Network 7 – CE SQ GW1 at HQ",
+        "pattern": re.compile(r"CE-_SMS_GW1", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
     },
-    "N8_MG_WUG_SP1_SQ": {
-        "label": "MG WUG (SP1, SQ)",
-        "pattern": re.compile(r"ZS\s+WUP02\s+CCG\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 1590,
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "ce_sms_gw2", "label": "HQ CE-_SMS_GW2",
+        "network": "Network 7 – CE SQ GW2 at HQ",
+        "pattern": re.compile(r"CE-_SMS_GW2", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
     },
-    "N9_FS1_WUG_SP1_CCG": {
-        "label": "FS-1 WUG (SP1, CCG)",
-        "pattern": re.compile(r"FS-1\s+CCG\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 1590,
-        "interval_note": "UNKNOWN -- only 1 sample seen, placeholder threshold in use",
-        "confirmed": False,
-        "alertable": True,
+    {
+        "id": "zs_wup01_ccg", "label": "ZS WUP01 CCG",
+        "network": "Network 8 – MG WUG01 at SP1 > SP1_SQ",
+        "pattern": re.compile(r"ZS\s+WUP01\s+CCG", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 12:00
     },
-    "N10_X_SQ_SP2_GW1": {
-        "label": "X SQ - SP2 Gateway 1",
-        "pattern": re.compile(r"SP2_SMS_GW1\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 75,  # message explicitly says "hourly keep alive"
-        "interval_note": "Hourly (stated explicitly in the alert text)",
-        "confirmed": True,
-        "alertable": True,
+    {
+        "id": "zs_wup02_ccg", "label": "ZS WUP02 CCG",
+        "network": "Network 8 – MG WUG02 at SP1 > SP1_SQ",
+        "pattern": re.compile(r"ZS\s+WUP02\s+CCG", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 12:00
     },
-    "N10_X_SQ_SP2_GW2": {
-        "label": "X SQ - SP2 Gateway 2",
-        "pattern": re.compile(r"SP2_SMS_GW2\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 75,
-        "interval_note": "Hourly (stated explicitly in the alert text)",
-        "confirmed": True,
-        "alertable": True,
+    {
+        "id": "fs1_ccg", "label": "FS-1 CCG",
+        "network": "Network 9 – FS-1 WUG at SP1 > SP1_CCG",
+        "pattern": re.compile(r"FS-1\s+CCG", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 12:00
     },
-    "N10_X_SQ_BV_GW2": {
-        "label": "X SQ - BV Gateway 2",
-        "pattern": re.compile(r"BV_SMS_GW2\s+is\s+alive", re.IGNORECASE),
-        "threshold_minutes": 75,
-        "interval_note": "Hourly (stated explicitly in the alert text)",
-        "confirmed": True,
-        "alertable": True,
+    {
+        "id": "sp2_sms_gw1", "label": "[DC] SP2_SMS_GW1",
+        "network": "Network 10 – X SQ GW1 at SP2",
+        "pattern": re.compile(r"SP2_SMS_GW1", re.I),
+        "interval_minutes": 60, "threshold_minutes": 65,  # hourly, 00:00-23:00
     },
-}
-DEVICE_IDS = list(DEVICE_CONFIG.keys())
+    {
+        "id": "sp2_sms_gw2", "label": "[DC] SP2_SMS_GW2",
+        "network": "Network 10 – X SQ GW2 at SP2",
+        "pattern": re.compile(r"SP2_SMS_GW2", re.I),
+        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 17:00
+    },
+    {
+        "id": "bv_sms_gw2", "label": "[DC] BV_SMS_GW2",
+        "network": "Network 10 – X SQ GW at BV",
+        "pattern": re.compile(r"BV_SMS_GW2", re.I),
+        "interval_minutes": 1140, "threshold_minutes": 1150,  # 2x/day: 12:00/17:00
+    },
+]
+DEVICE_IDS = [d["id"] for d in DEVICES]
+DEVICE_BY_ID = {d["id"]: d for d in DEVICES}
 
+# Words that mean "still fine" vs words that mean "explicitly reported down"
+# (in addition to the normal silence/timeout based detection below). None of
+# the sample messages seen so far included a down-alert example, so this is
+# a best-effort net for whatever wording your monitoring tools use if/when
+# they ever send one directly, on top of (never instead of) the timeout logic.
+ALIVE_KEYWORDS = re.compile(r"\balive\b", re.I)
+DOWN_KEYWORDS = re.compile(
+    r"\b(down|dead|fail(?:ed|ure)?|unreachable|not\s+respond(?:ing)?|"
+    r"no\s+response|lost|offline|critical)\b",
+    re.I,
+)
+
+# 4. Where state/output live, relative to the repo root this script runs from.
 STATE_PATH = "state.json"
 DASHBOARD_PATH = "docs/index.html"
 
 # ===================================================================
-# Nothing below this line should normally need editing -- see
-# references/sync-logic.md (in the telegram-status-dashboard skill) for why
-# these specific rules matter.
+# Nothing below this line should normally need editing -- it's the
+# correctness-critical plumbing. Read references/sync-logic.md (in the
+# skill this was generated from) before touching the status-transition
+# logic specifically; regressing it silently breaks down-alerting.
 # ===================================================================
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
@@ -239,20 +252,23 @@ def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
+def blank_device_state(d):
+    return {
+        "label": d["label"],
+        "network": d["network"],
+        "lastSeenIso": None,
+        "lastKnownStatus": "unknown",
+        "intervalMinutes": d["interval_minutes"],
+        "thresholdMinutes": d["threshold_minutes"],
+    }
+
+
 def load_state():
     if os.path.exists(STATE_PATH):
         with open(STATE_PATH, "r") as f:
             return json.load(f)
     return {
-        "devices": {
-            d: {
-                "label": DEVICE_CONFIG[d]["label"],
-                "lastSeenIso": None,
-                "lastKnownStatus": "unknown",
-                "thresholdMinutes": DEVICE_CONFIG[d]["threshold_minutes"],
-            }
-            for d in DEVICE_IDS
-        },
+        "devices": {d["id"]: blank_device_state(d) for d in DEVICES},
         "lastPollIso": None,
         "lastPollOk": False,
         "lastPollNote": "Never polled yet.",
@@ -279,9 +295,9 @@ def fetch_updates(offset):
 
 
 def extract_message(item):
-    # Single chat for all 21 feeds per this deployment, but keep checking all
-    # four keys unconditionally regardless -- costs nothing, and protects
-    # against a future Group/Channel change.
+    # Groups deliver posts as message/edited_message; broadcast Channels
+    # deliver them as channel_post/edited_channel_post. Check all four
+    # unconditionally rather than assuming which one applies.
     return (
         item.get("message")
         or item.get("edited_message")
@@ -290,12 +306,14 @@ def extract_message(item):
     )
 
 
-def compute_status(last_seen_iso, threshold_minutes, now_dt):
+def compute_status(dev_state, now_dt):
+    last_seen_iso = dev_state.get("lastSeenIso")
     if last_seen_iso is None:
         return "unknown"
+    threshold = dev_state.get("thresholdMinutes", 1440)
     last_seen = datetime.fromisoformat(last_seen_iso)
     elapsed_minutes = (now_dt - last_seen).total_seconds() / 60.0
-    return "up" if elapsed_minutes <= threshold_minutes else "down"
+    return "up" if elapsed_minutes <= threshold else "down"
 
 
 def send_alert(subject, body):
@@ -324,12 +342,14 @@ def render_dashboard(state):
 
     embedded = {
         "devices": {
-            d: {
-                "label": state["devices"][d]["label"],
-                "lastSeenIso": state["devices"][d]["lastSeenIso"],
-                "thresholdMinutes": state["devices"][d]["thresholdMinutes"],
+            d_id: {
+                "label": state["devices"][d_id]["label"],
+                "network": state["devices"][d_id]["network"],
+                "lastSeenIso": state["devices"][d_id]["lastSeenIso"],
+                "intervalMinutes": state["devices"][d_id]["intervalMinutes"],
+                "thresholdMinutes": state["devices"][d_id]["thresholdMinutes"],
             }
-            for d in DEVICE_IDS
+            for d_id in DEVICE_IDS
         },
         "lastPollIso": state["lastPollIso"],
         "lastPollOk": state["lastPollOk"],
@@ -340,9 +360,15 @@ def render_dashboard(state):
         + json.dumps(embedded, indent=2)
         + "</script>"
     )
+    # Use a replacement FUNCTION, not the raw string -- re.sub interprets
+    # backslashes in a string replacement (e.g. \1, \g<name>), and
+    # json.dumps' default ensure_ascii=True escapes non-ASCII characters
+    # (the en/em dashes in network labels below) as literal "–"-style
+    # sequences, which re.sub would otherwise try to parse as an invalid
+    # backreference and crash with "bad escape \u".
     new_html = re.sub(
         r'<script type="application/json" id="device-state">.*?</script>',
-        block,
+        lambda _match: block,
         html,
         flags=re.DOTALL,
     )
@@ -354,27 +380,25 @@ def main():
     state = load_state()
     now_dt = datetime.now(timezone.utc)
 
+    # Add any newly-configured devices that aren't in state.json yet, without
+    # touching devices that already have history.
+    for d in DEVICES:
+        state["devices"].setdefault(d["id"], blank_device_state(d))
+        # Keep interval/threshold/label/network in state in sync with the
+        # config above, in case they were edited since the last run.
+        state["devices"][d["id"]]["label"] = d["label"]
+        state["devices"][d["id"]]["network"] = d["network"]
+        state["devices"][d["id"]]["intervalMinutes"] = d["interval_minutes"]
+        state["devices"][d["id"]]["thresholdMinutes"] = d["threshold_minutes"]
+
     # Before-status per device: use the status PERSISTED FROM THE LAST RUN,
-    # never recompute fresh from lastSeenIso + current "now" (see
-    # references/sync-logic.md) -- otherwise a device that goes quiet can
-    # never be detected as a fresh down-transition.
+    # never recompute it fresh from lastSeenIso + the current "now" -- see
+    # references/sync-logic.md. This is what makes pure-timeout (silent)
+    # down-transitions detectable at all.
     before_status = {}
-    for d in DEVICE_IDS:
-        dev = state["devices"].setdefault(
-            d,
-            {
-                "label": DEVICE_CONFIG[d]["label"],
-                "lastSeenIso": None,
-                "lastKnownStatus": "unknown",
-                "thresholdMinutes": DEVICE_CONFIG[d]["threshold_minutes"],
-            },
-        )
-        # Keep thresholdMinutes in state in sync with the current config, in
-        # case DEVICE_CONFIG was tuned since the last run.
-        dev["thresholdMinutes"] = DEVICE_CONFIG[d]["threshold_minutes"]
-        before_status[d] = dev.get("lastKnownStatus") or compute_status(
-            dev.get("lastSeenIso"), dev["thresholdMinutes"], now_dt
-        )
+    for d_id in DEVICE_IDS:
+        dev = state["devices"][d_id]
+        before_status[d_id] = dev.get("lastKnownStatus") or compute_status(dev, now_dt)
 
     offset = state.get("lastUpdateId", 0)
     new_offset = offset
@@ -385,10 +409,12 @@ def main():
     except Exception as exc:  # deliberately broad -- see comment below
         updates = []
         fetch_error = str(exc)
-        # No early return: down-detection below must still run even if the
-        # fetch failed, since it's purely a function of elapsed time.
+        # No early return / sys.exit here: a Telegram fetch failure must NOT
+        # suppress down-detection below, because a device can go "down"
+        # purely from elapsed time with zero new messages this run.
 
     matched_devices = set()
+    explicit_down = set()
     for item in updates:
         update_id = item.get("update_id")
         if update_id is not None and update_id >= new_offset:
@@ -397,48 +423,54 @@ def main():
         if not msg:
             continue
         text = msg.get("text") or msg.get("caption") or ""
-        for device_id, cfg in DEVICE_CONFIG.items():
-            if cfg["pattern"].search(text):
-                state["devices"][device_id]["lastSeenIso"] = now_iso()
-                matched_devices.add(device_id)
-                # Each feed's pattern is unique (verified against every real
-                # sample with zero cross-matches) so one message should only
-                # ever match one device; don't `break` in case a future feed
-                # legitimately shares wording, so it isn't silently missed.
+        if not text:
+            continue
 
-    after_status = {
-        d: compute_status(
-            state["devices"][d].get("lastSeenIso"),
-            DEVICE_CONFIG[d]["threshold_minutes"],
-            now_dt,
-        )
-        for d in DEVICE_IDS
-    }
+        for d in DEVICES:
+            if not d["pattern"].search(text):
+                continue
+            if ALIVE_KEYWORDS.search(text):
+                state["devices"][d["id"]]["lastSeenIso"] = now_iso()
+                matched_devices.add(d["id"])
+            elif DOWN_KEYWORDS.search(text):
+                # Explicit down report -- mark it immediately, don't touch
+                # lastSeenIso (that's specifically "last time it was alive").
+                explicit_down.add(d["id"])
+            break  # a message belongs to at most one device
+
+    # Down-detection runs unconditionally -- fetch failure or not, new
+    # messages or not -- because it's purely a function of elapsed time.
+    after_status = {}
+    for d_id in DEVICE_IDS:
+        if d_id in explicit_down:
+            after_status[d_id] = "down"
+        else:
+            after_status[d_id] = compute_status(state["devices"][d_id], now_dt)
 
     newly_down = [
-        d
-        for d in DEVICE_IDS
-        if before_status[d] in ("up", "unknown")
-        and after_status[d] == "down"
-        and DEVICE_CONFIG[d]["alertable"]
+        d_id
+        for d_id in DEVICE_IDS
+        if before_status[d_id] in ("up", "unknown") and after_status[d_id] == "down"
     ]
 
-    for d in newly_down:
-        dev = state["devices"][d]
-        cfg = DEVICE_CONFIG[d]
+    for d_id in newly_down:
+        dev = state["devices"][d_id]
+        reason = (
+            "reported down explicitly in an alert message"
+            if d_id in explicit_down
+            else f"has not sent a heartbeat in over {dev['thresholdMinutes']} minutes"
+        )
         send_alert(
-            subject=f"[DOWN] {dev['label']} has not checked in",
+            subject=f"[DOWN] {dev['label']} ({dev['network']})",
             body=(
-                f"{dev['label']} ({d}) has not sent a heartbeat in over "
-                f"{cfg['threshold_minutes']} minutes.\n"
-                f"Expected schedule: {cfg['interval_note']}\n"
+                f"{dev['label']} on {dev['network']} {reason}.\n"
                 f"Last seen: {dev.get('lastSeenIso') or 'never'}\n"
                 f"Checked at: {now_iso()}"
             ),
         )
 
-    for d in DEVICE_IDS:
-        state["devices"][d]["lastKnownStatus"] = after_status[d]
+    for d_id in DEVICE_IDS:
+        state["devices"][d_id]["lastKnownStatus"] = after_status[d_id]
 
     state["lastPollIso"] = now_iso()
     if fetch_error:
@@ -446,14 +478,15 @@ def main():
         state["lastPollNote"] = f"Telegram fetch failed: {fetch_error}"
     else:
         state["lastPollOk"] = True
-        state["lastPollNote"] = (
-            f"Matched heartbeats for: {', '.join(sorted(matched_devices))}."
-            if matched_devices
-            else "No new heartbeats this cycle."
-        )
+        note_parts = []
+        if matched_devices:
+            note_parts.append(f"Matched heartbeats for: {', '.join(sorted(matched_devices))}.")
+        if explicit_down:
+            note_parts.append(f"Explicit down reports for: {', '.join(sorted(explicit_down))}.")
+        state["lastPollNote"] = " ".join(note_parts) if note_parts else "No new heartbeats this cycle."
 
     # Only advance the offset in the state we're about to persist AFTER
-    # everything above succeeded -- see references/sync-logic.md.
+    # everything above has been computed from `updates`.
     state["lastUpdateId"] = new_offset
 
     save_state(state)
@@ -461,8 +494,9 @@ def main():
 
     print(state["lastPollNote"])
     if newly_down:
-        print(f"Newly down (alerted): {', '.join(newly_down)}")
+        print(f"Newly down: {', '.join(newly_down)}")
 
 
 if __name__ == "__main__":
     main()
+
