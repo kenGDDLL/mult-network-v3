@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IT System Health Dashboard</title>
+<style>
+  :root {
+    --ink: #1a1d23;
+    --ink-muted: #5a6270;
+    --chrome: #f5f6f8;
+    --chrome-line: #e2e5ea;
+    --card: #ffffff;
+    --good: #0ca30c;
+    --good-bg: #eaf7ea;
+    --warning: #fab219;
+    --warning-bg: #fff6e3;
+    --critical: #d03b3b;
+    --critical-bg: #fdeaea;
+    --unknown: #8a93a3;
+    --unknown-bg: #eef0f3;
+  }
+  [data-theme="dark"] {
+    --ink: #eef0f3;
+    --ink-muted: #a3aab8;
+    --chrome: #14161a;
+    --chrome-line: #2a2d34;
+    --card: #1c1f25;
+    --good-bg: #102a12;
+    --warning-bg: #332a10;
+    --critical-bg: #3a1414;
+    --unknown-bg: #262a31;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--chrome);
+    color: var(--ink);
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--chrome-line);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  h1 { font-size: 20px; margin: 0; }
+  .subtitle { color: var(--ink-muted); font-size: 13px; margin-top: 2px; }
+  .controls { display: flex; gap: 8px; }
+  button.toggle {
+    border: 1px solid var(--chrome-line);
+    background: var(--card);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button.toggle:hover { border-color: var(--ink-muted); }
+  main { padding: 24px 28px; max-width: 1200px; margin: 0 auto; }
+  .banner {
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    display: none;
+  }
+  .banner.show { display: block; }
+  .banner.pending { background: var(--unknown-bg); color: var(--ink-muted); }
+  .banner.stale { background: var(--warning-bg); color: #7a5200; }
+  [data-theme="dark"] .banner.stale { color: var(--warning); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  .stat-tile {
+    background: var(--card);
+    border: 1px solid var(--chrome-line);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-tile .count { font-size: 30px; font-weight: 700; }
+  .stat-tile .label { font-size: 13px; color: var(--ink-muted); margin-top: 2px; }
+  .stat-tile.up .count { color: var(--good); }
+  .stat-tile.down .count { color: var(--critical); }
+  .stat-tile.unknown .count { color: var(--unknown); }
+  .stat-tile.networks .count { color: var(--ink); }
+  /* Overview strip: one small pill per network, so all 17 network groups'
+     health is visible in a single glance with zero scrolling, regardless
+     of how long the detailed card list below is. */
+  .overview-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .overview-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    background: var(--card);
+    color: var(--ink-muted);
+    max-width: 260px;
+  }
+  .overview-pill .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .overview-pill .frac { flex-shrink: 0; opacity: 0.85; }
+  .overview-pill.ok { background: var(--good-bg); color: var(--good); }
+  .overview-pill.down { background: var(--critical-bg); color: var(--critical); }
+  .overview-pill.unknown { background: var(--unknown-bg); color: var(--unknown); }
+  .overview-pill.active { border-color: currentColor; }
+  .overview-pill:hover { opacity: 0.85; }
+
+  /* Devices are grouped back into per-network panels, but as a responsive
+     multi-column GRID of compact panels (several per row) instead of the
+     original one-full-width-section-per-network layout -- that's what
+     made a 23-device / 17-network list scroll so much for what it showed,
+     since most networks only have 1-3 devices and still took the entire
+     row width. Panels with any problem device sort to the front. */
+  #cardView .network-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; align-items: start; }
+  .network-panel {
+    background: var(--card);
+    border: 1px solid var(--chrome-line);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .network-panel.has-down { border-color: var(--critical); }
+  .network-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--chrome-line);
+  }
+  .network-panel-header .name {
+    font-weight: 600;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .network-panel-header .frac {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    flex-shrink: 0;
+  }
+  .device-row { padding: 6px 0; border-bottom: 1px dashed var(--chrome-line); }
+  .device-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .device-row:first-child { padding-top: 0; }
+  .device-row-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .device-row-top .name { font-weight: 600; font-size: 13px; line-height: 1.3; }
+  .device-row-meta { font-size: 11px; color: var(--ink-muted); margin-top: 2px; line-height: 1.5; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .badge.up { background: var(--good-bg); color: var(--good); }
+  .badge.down { background: var(--critical-bg); color: var(--critical); }
+  .badge.unknown { background: var(--unknown-bg); color: var(--unknown); }
+  #tableView { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; display: none; }
+  #tableView.show { display: table; }
+  #cardView.hide { display: none; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--chrome-line); font-size: 13px; }
+  th { color: var(--ink-muted); font-weight: 600; }
+  .search-row { margin-bottom: 16px; }
+  .search-row input {
+    width: 100%;
+    max-width: 320px;
+    padding: 8px 12px;
+    border: 1px solid var(--chrome-line);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--ink);
+    font-size: 13px;
+  }
+  footer { text-align: center; color: var(--ink-muted); font-size: 12px; padding: 20px; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>IT System Health Dashboard</h1>
+    <div class="subtitle" id="lastPollLine">Loading...</div>
+  </div>
+  <div class="controls">
+    <button class="toggle" id="viewToggle">Table view</button>
+    <button class="toggle" id="themeToggle">Dark mode</button>
+  </div>
+</header>
+<main>
+  <div class="banner pending" id="pendingBanner">Waiting for the first poll to complete.</div>
+  <div class="banner stale" id="staleBanner">The last successful poll was a while ago -- this dashboard may be showing stale data.</div>
+
+  <div class="stats">
+    <div class="stat-tile up"><div class="count" id="upCount">0</div><div class="label">Up</div></div>
+    <div class="stat-tile down"><div class="count" id="downCount">0</div><div class="label">Down</div></div>
+    <div class="stat-tile unknown"><div class="count" id="unknownCount">0</div><div class="label">Unknown</div></div>
+    <div class="stat-tile networks"><div class="count" id="networkCount">0</div><div class="label">Networks</div></div>
+  </div>
+
+  <div class="overview-strip" id="overviewStrip"></div>
+
+  <div class="search-row">
+    <input type="text" id="searchBox" placeholder="Filter by device or network name..." />
+  </div>
+
+  <div id="cardView"></div>
+  <table id="tableView">
+    <thead>
+      <tr><th>Network</th><th>Device</th><th>Expected heartbeat</th><th>Status</th><th>Last heartbeat</th><th>Time since</th><th>Next expected by</th></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</main>
+<footer>Recomputed client-side every 60 seconds from the last successful poll. Source of truth: GitHub Actions.</footer>
+
+<script type="application/json" id="device-state">{
+  "devices": {
+    "sdc_a_sq01": {
+      "label": "SDC_A_SQ01",
+      "network": "Network 1 \u2013 Cloud A SQ at SP1",
+      "expectedSchedule": "08:00, 12:00, 17:00 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 900,
+      "thresholdMinutes": 905
+    },
+    "sp1_ccg_a": {
+      "label": "SP CCG",
+      "network": "Network 1 \u2013 Cloud A WUG at SP1 > SP1_CCG",
+      "expectedSchedule": "~12:00, 17:00 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1140,
+      "thresholdMinutes": 1145
+    },
+    "sg_ccg_via_sp": {
+      "label": "SG CCG via SP",
+      "network": "Network 1 \u2013 Cloud A WUG at HQ > SG_CCG (Default NMS routing)",
+      "expectedSchedule": "~17:05 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "sg_ccg_thru_sq": {
+      "label": "SG CCG thru SQ [ITI001]",
+      "network": "Network 1 \u2013 Cloud A WUG at HQ > SP1_SQ",
+      "expectedSchedule": "00:00, 08:00, 12:00, ~17:05 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 480,
+      "thresholdMinutes": 485
+    },
+    "sdc_b_sq01": {
+      "label": "SDC_B_SQ01",
+      "network": "Network 2 \u2013 Cloud B SQ at SP1",
+      "expectedSchedule": "08:00, 12:00, 17:00 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 900,
+      "thresholdMinutes": 905
+    },
+    "dsp1_wug": {
+      "label": "DSP1 WUG [ITI001]",
+      "network": "Network 2 \u2013 Cloud B WUG at SP1 > SP1_SQ",
+      "expectedSchedule": "~17:05 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "sm_sp1_wug01": {
+      "label": "SM_SP1 WUG 01 (Active site)",
+      "network": "Network 3 \u2013 SM_v2 WUG at SP1 > SP1_SQ",
+      "expectedSchedule": "00:00, 08:00, ~12:12, 17:00 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 480,
+      "thresholdMinutes": 485
+    },
+    "sm_wug01": {
+      "label": "SM WUG 01 (Standby site)",
+      "network": "Network 3 \u2013 SM_v1 WUG at HQ > SP1_SQ",
+      "expectedSchedule": "~12:12 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "ca_wug": {
+      "label": "CA WUG",
+      "network": "Network 4 \u2013 CA WUG at SP1 > SP1_SQ",
+      "expectedSchedule": "~17:00 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "ov_sms_gw1": {
+      "label": "HQ OV_SMS_GW1",
+      "network": "Network 5 \u2013 OV SQ GW1 at HQ",
+      "expectedSchedule": "~15:01 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "ov_sms_gw2": {
+      "label": "HQ OV_SMS_GW2",
+      "network": "Network 5 \u2013 OV SQ GW2 at HQ",
+      "expectedSchedule": "~15:01 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "ov_wug01": {
+      "label": "OV WUG 01",
+      "network": "Network 5 \u2013 OV WUG at HQ > HQ_SQ",
+      "expectedSchedule": "~14:02 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "vg_sms_gw1": {
+      "label": "HQ VG_SMS_GW1",
+      "network": "Network 6 \u2013 VG WUG GW1 at HQ > HQ_SQ",
+      "expectedSchedule": "~15:01 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "vg_sms_gw2": {
+      "label": "HQ VG_SMS_GW2",
+      "network": "Network 6 \u2013 VG WUG GW2 at HQ > HQ_SQ",
+      "expectedSchedule": "~15:01 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "ce_wug01": {
+      "label": "CE-G WUP 01",
+      "network": "Network 7 \u2013 CE WUG at HQ > HQ_SQ",
+      "expectedSchedule": "~10:25 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "ce_sms_gw1": {
+      "label": "HQ CE-_SMS_GW1",
+      "network": "Network 7 \u2013 CE SQ GW1 at HQ",
+      "expectedSchedule": "~15:01 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "ce_sms_gw2": {
+      "label": "HQ CE-_SMS_GW2",
+      "network": "Network 7 \u2013 CE SQ GW2 at HQ",
+      "expectedSchedule": "~15:01 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "zs_wup01_ccg": {
+      "label": "ZS WUP01 CCG",
+      "network": "Network 8 \u2013 MG WUG01 at SP1 > SP1_SQ",
+      "expectedSchedule": "~12:00 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "zs_wup02_ccg": {
+      "label": "ZS WUP02 CCG",
+      "network": "Network 8 \u2013 MG WUG02 at SP1 > SP1_SQ",
+      "expectedSchedule": "~12:00 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "fs1_ccg": {
+      "label": "FS-1 CCG",
+      "network": "Network 9 \u2013 FS-1 WUG at SP1 > SP1_CCG",
+      "expectedSchedule": "~12:00 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "sp2_sms_gw1": {
+      "label": "[DC] SP2_SMS_GW1",
+      "network": "Network 10 \u2013 X SQ GW1 at SP2",
+      "expectedSchedule": "Hourly, 00:00\u201323:00",
+      "lastSeenIso": null,
+      "intervalMinutes": 60,
+      "thresholdMinutes": 65
+    },
+    "sp2_sms_gw2": {
+      "label": "[DC] SP2_SMS_GW2",
+      "network": "Network 10 \u2013 X SQ GW2 at SP2",
+      "expectedSchedule": "~17:00 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
+    },
+    "bv_sms_gw2": {
+      "label": "[DC] BV_SMS_GW2",
+      "network": "Network 10 \u2013 X SQ GW at BV",
+      "expectedSchedule": "12:00, 17:00 daily",
+      "lastSeenIso": null,
+      "intervalMinutes": 1140,
+      "thresholdMinutes": 1145
+    }
+  },
+  "lastPollIso": null,
+  "lastPollOk": false,
+  "lastPollNote": "Never polled yet."
+}</script>
+
+<script>
+(function () {
+  var STALE_POLL_MINUTES = 90; // if the last successful poll is older than this, show the stale banner
+  var searchTerm = "";
+
+  function readState() {
+    return JSON.parse(document.getElementById("device-state").textContent);
+  }
+
+  function minutesSince(iso) {
+    if (!iso) return null;
+    return (Date.now() - new Date(iso).getTime()) / 60000;
+  }
+
+  function fmtMinutes(mins) {
+    if (mins === null) return "never";
+    if (mins < 60) return Math.round(mins) + "m";
+    var h = Math.floor(mins / 60), m = Math.round(mins % 60);
+    return h + "h " + m + "m";
+  }
+
+  function fmtTime(iso) {
+    if (!iso) return "Never";
+    var d = new Date(iso);
+    return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
+  function statusFor(dev) {
+    var mins = minutesSince(dev.lastSeenIso);
+    if (mins === null) return "unknown";
+    return mins <= (dev.thresholdMinutes || 1440) ? "up" : "down";
+  }
+
+  function badgeHtml(status) {
+    var icon = status === "up" ? "✓" : status === "down" ? "✗" : "?";
+    var label = status === "up" ? "Up" : status === "down" ? "Down" : "Unknown";
+    return '<span class="badge ' + status + '">' + icon + " " + label + "</span>";
+  }
+
+  var STATUS_ORDER = { down: 0, unknown: 1, up: 2 };
+  var STATUS_SECTION_LABEL = { down: "Down", unknown: "Unknown", up: "Up" };
+  var activeNetworkFilter = null; // set by clicking an overview pill
+
+  function render() {
+    var state = readState();
+    var devices = state.devices || {};
+    var ids = Object.keys(devices);
+    var term = searchTerm.trim().toLowerCase();
+
+    // Group by network (for the overview strip only -- the detailed list
+    // below no longer breaks into one section per network, since most
+    // networks here only have 1-3 devices and a full-width heading per
+    // group was what made a 23-device list scroll much longer than it
+    // needed to).
+    var networkOrder = [];
+    var byNetwork = {};
+    ids.forEach(function (id) {
+      var dev = devices[id];
+      var net = dev.network || "Ungrouped";
+      if (!byNetwork[net]) { byNetwork[net] = []; networkOrder.push(net); }
+      byNetwork[net].push(Object.assign({ id: id }, dev));
+    });
+
+    var counts = { up: 0, down: 0, unknown: 0 };
+    ids.forEach(function (id) { counts[statusFor(devices[id])]++; });
+
+    // --- Overview strip: one pill per network, always showing ALL
+    // networks (not filtered by search) so the full picture is visible
+    // in one glance regardless of what's currently filtered below.
+    var pillHtml = "";
+    networkOrder.forEach(function (net) {
+      var devs = byNetwork[net];
+      var netCounts = { up: 0, down: 0, unknown: 0 };
+      devs.forEach(function (d) { netCounts[statusFor(d)]++; });
+      var pillClass = netCounts.down > 0 ? "down" : (netCounts.unknown > 0 ? "unknown" : "ok");
+      var activeClass = activeNetworkFilter === net ? " active" : "";
+      pillHtml +=
+        '<span class="overview-pill ' + pillClass + activeClass + '" data-net="' + net.replace(/"/g, "&quot;") + '" title="' + net + '">' +
+          '<span class="name">' + net + '</span>' +
+          '<span class="frac">' + netCounts.up + '/' + devs.length + '</span>' +
+        '</span>';
+    });
+    document.getElementById("overviewStrip").innerHTML = pillHtml;
+    document.querySelectorAll(".overview-pill").forEach(function (pill) {
+      pill.addEventListener("click", function () {
+        var net = this.getAttribute("data-net");
+        if (activeNetworkFilter === net) {
+          activeNetworkFilter = null;
+          document.getElementById("searchBox").value = "";
+          searchTerm = "";
+        } else {
+          activeNetworkFilter = net;
+          document.getElementById("searchBox").value = net;
+          searchTerm = net;
+        }
+        render();
+      });
+    });
+
+    // --- Flat, filtered, status-sorted list -- used for the table view
+    // (problems first, regardless of network) and to compute per-network
+    // aggregates below.
+    var flat = ids
+      .map(function (id) { return Object.assign({ id: id }, devices[id]); })
+      .filter(function (d) {
+        if (!term) return true;
+        return (d.label + " " + (d.network || "")).toLowerCase().indexOf(term) !== -1;
+      });
+    flat.forEach(function (d) { d._status = statusFor(d); });
+    flat.sort(function (a, b) {
+      var byStatus = STATUS_ORDER[a._status] - STATUS_ORDER[b._status];
+      if (byStatus !== 0) return byStatus;
+      var byNet = (a.network || "").localeCompare(b.network || "");
+      if (byNet !== 0) return byNet;
+      return (a.label || "").localeCompare(b.label || "");
+    });
+
+    var rowHtml = "";
+    flat.forEach(function (dev) {
+      var net = dev.network || "Ungrouped";
+      var sinceMins = minutesSince(dev.lastSeenIso);
+      var nextBy = dev.lastSeenIso
+        ? new Date(new Date(dev.lastSeenIso).getTime() + (dev.thresholdMinutes || 1440) * 60000)
+            .toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+        : "--";
+      var schedule = dev.expectedSchedule || "--";
+      rowHtml +=
+        '<tr><td>' + net + '</td><td>' + dev.label + '</td>' +
+        '<td>' + schedule + '</td>' +
+        '<td>' + badgeHtml(dev._status) + '</td>' +
+        '<td>' + fmtTime(dev.lastSeenIso) + '</td>' +
+        '<td>' + fmtMinutes(sinceMins) + '</td>' +
+        '<td>' + nextBy + '</td></tr>';
+    });
+
+    // --- Card view: grouped back into one panel per network, laid out as
+    // a responsive multi-column GRID of compact panels (not one full-width
+    // section per network) so a network with only 1-2 devices doesn't cost
+    // a whole row. Panels with a down device sort first, then panels with
+    // an unknown device, then all-up panels -- ties broken by the
+    // original network order. Devices inside each panel are sorted the
+    // same way (down/unknown first).
+    var matchedNetworks = {};
+    flat.forEach(function (d) {
+      var net = d.network || "Ungrouped";
+      if (!matchedNetworks[net]) matchedNetworks[net] = [];
+      matchedNetworks[net].push(d);
+    });
+
+    var panelNets = networkOrder.filter(function (net) { return matchedNetworks[net]; });
+    panelNets.sort(function (netA, netB) {
+      function worst(net) {
+        var best = 2; // "up"
+        matchedNetworks[net].forEach(function (d) { best = Math.min(best, STATUS_ORDER[d._status]); });
+        return best;
+      }
+      var byWorst = worst(netA) - worst(netB);
+      if (byWorst !== 0) return byWorst;
+      return networkOrder.indexOf(netA) - networkOrder.indexOf(netB);
+    });
+
+    var cardHtml = '<div class="network-grid">';
+    panelNets.forEach(function (net) {
+      var devs = matchedNetworks[net].slice().sort(function (a, b) {
+        var byStatus = STATUS_ORDER[a._status] - STATUS_ORDER[b._status];
+        if (byStatus !== 0) return byStatus;
+        return (a.label || "").localeCompare(b.label || "");
+      });
+      var netUp = devs.filter(function (d) { return d._status === "up"; }).length;
+      var hasDown = devs.some(function (d) { return d._status === "down"; });
+
+      cardHtml += '<div class="network-panel' + (hasDown ? " has-down" : "") + '">' +
+        '<div class="network-panel-header"><span class="name" title="' + net + '">' + net + '</span>' +
+        '<span class="frac">' + netUp + '/' + devs.length + '</span></div>';
+
+      devs.forEach(function (dev) {
+        var sinceMins = minutesSince(dev.lastSeenIso);
+        var nextBy = dev.lastSeenIso
+          ? new Date(new Date(dev.lastSeenIso).getTime() + (dev.thresholdMinutes || 1440) * 60000)
+              .toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+          : "--";
+        var schedule = dev.expectedSchedule || "--";
+        cardHtml +=
+          '<div class="device-row">' +
+            '<div class="device-row-top"><span class="name">' + dev.label + '</span>' + badgeHtml(dev._status) + '</div>' +
+            '<div class="device-row-meta">Expected: ' + schedule + '</div>' +
+            '<div class="device-row-meta">Last: ' + fmtTime(dev.lastSeenIso) + ' (' + fmtMinutes(sinceMins) + ' ago) &middot; Next by: ' + nextBy + '</div>' +
+          '</div>';
+      });
+
+      cardHtml += '</div>';
+    });
+    cardHtml += '</div>';
+
+    document.getElementById("cardView").innerHTML = flat.length ? cardHtml : '<div class="row" style="color:var(--ink-muted)">No devices match.</div>';
+    document.getElementById("tableBody").innerHTML = rowHtml;
+    document.getElementById("upCount").textContent = counts.up;
+    document.getElementById("downCount").textContent = counts.down;
+    document.getElementById("unknownCount").textContent = counts.unknown;
+    document.getElementById("networkCount").textContent = networkOrder.length;
+
+    var pending = !state.lastPollIso;
+    document.getElementById("pendingBanner").classList.toggle("show", pending);
+
+    var pollAgeMins = minutesSince(state.lastPollIso);
+    var stale = !pending && (pollAgeMins === null || pollAgeMins > STALE_POLL_MINUTES || !state.lastPollOk);
+    document.getElementById("staleBanner").classList.toggle("show", stale);
+
+    var line = pending
+      ? "Waiting for first poll..."
+      : "Last poll: " + fmtTime(state.lastPollIso) + " (" + fmtMinutes(pollAgeMins) + " ago) -- " + (state.lastPollNote || "");
+    document.getElementById("lastPollLine").textContent = line;
+  }
+
+  document.getElementById("viewToggle").addEventListener("click", function () {
+    var cardView = document.getElementById("cardView");
+    var tableView = document.getElementById("tableView");
+    var showingTable = tableView.classList.contains("show");
+    tableView.classList.toggle("show", !showingTable);
+    cardView.classList.toggle("hide", !showingTable);
+    this.textContent = showingTable ? "Table view" : "Card view";
+  });
+
+  document.getElementById("themeToggle").addEventListener("click", function () {
+    var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+    this.textContent = isDark ? "Dark mode" : "Light mode";
+  });
+
+  document.getElementById("searchBox").addEventListener("input", function (e) {
+    searchTerm = e.target.value;
+    render();
+  });
+
+  render();
+  setInterval(render, 60000);
+})();
+</script>
+</body>
+</html>
