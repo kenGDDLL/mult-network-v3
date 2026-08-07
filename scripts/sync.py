@@ -60,155 +60,186 @@ from email.mime.text import MIMEText
 #        3x/day (08:00/12:00/17:00):       interval=900   (max gap 15h overnight)
 #        2x/day (~12:0x/17:0x):            interval=1140  (max gap ~19h overnight)
 #        1x/day:                           interval=1440  (max gap 24h)
-#    - threshold_minutes: a FLAT jitter buffer on top of interval_minutes,
-#      per explicit request -- +5 min for Network 10 GW1 (sp2_sms_gw1, the
-#      one truly-hourly device, where fast detection matters most), +10 min
-#      for every other device. This is tighter than the interval-scaled
-#      buffer used earlier (which gave the once-daily devices ~3 hours of
-#      slack) -- a flat +10 min gives those same once-daily devices much
-#      less room to absorb a late SMS-to-Telegram gateway delivery, so if
-#      you start seeing false "down" alerts on a specific device that
-#      correlate with it just being a few minutes late rather than a real
-#      outage, that device's buffer is the first thing to widen back up.
+#    - threshold_minutes: a FLAT +5 min jitter buffer on top of
+#      interval_minutes for every device, per explicit request. This is
+#      MUCH tighter than the interval-scaled buffer used originally (which
+#      gave once-daily devices ~3 hours of slack to absorb a late
+#      SMS-to-Telegram gateway delivery) -- with only +5 min, a message
+#      that's a few minutes late for reasons that have nothing to do with
+#      an actual outage (telco delay, gateway backlog) can now cross the
+#      threshold and fire a false "down" alert. Now that lastSeenIso is
+#      Telegram's own message timestamp rather than poll-processing time
+#      (see message_seen_iso() below), the buffer only needs to cover real
+#      delivery jitter, not polling-cycle timing -- but +5 min is still
+#      tight for once-daily devices. If a specific device starts flapping
+#      down/up without a real outage, widen just that device's
+#      threshold_minutes here, rather than touching the others.
+#    - expected_schedule: a human-readable reference string shown on the
+#      dashboard next to each device (e.g. "08:00, 12:00, 17:00 daily") so
+#      you can sanity-check "Last heartbeat" against when it was actually
+#      supposed to check in.
 # ---------------------------------------------------------------------------
 DEVICES = [
     {
         "id": "sdc_a_sq01", "label": "SDC_A_SQ01",
         "network": "Network 1 – Cloud A SQ at SP1",
         "pattern": re.compile(r"SDC_A_SQ01", re.I),
-        "interval_minutes": 900, "threshold_minutes": 910,  # 3x/day: 08:00/12:00/17:00
+        "expected_schedule": "08:00, 12:00, 17:00 daily",
+        "interval_minutes": 900, "threshold_minutes": 905,  # 08:00, 12:00, 17:00 daily
     },
     {
         "id": "sp1_ccg_a", "label": "SP CCG",
         "network": "Network 1 – Cloud A WUG at SP1 > SP1_CCG",
         "pattern": re.compile(r"\bSP\s+CCG\s+is\s+alive", re.I),
-        "interval_minutes": 1140, "threshold_minutes": 1150,  # 2x/day: 12:02/17:02
+        "expected_schedule": "~12:00, 17:00 daily",
+        "interval_minutes": 1140, "threshold_minutes": 1145,  # ~12:00, 17:00 daily
     },
     {
         "id": "sg_ccg_via_sp", "label": "SG CCG via SP",
         "network": "Network 1 – Cloud A WUG at HQ > SG_CCG (Default NMS routing)",
         "pattern": re.compile(r"SG\s+CCG\s+via\s+SP", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 17:05
+        "expected_schedule": "~17:05 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~17:05 daily
     },
     {
         "id": "sg_ccg_thru_sq", "label": "SG CCG thru SQ [ITI001]",
         "network": "Network 1 – Cloud A WUG at HQ > SP1_SQ",
         "pattern": re.compile(r"SG\s+CCG\s+is\s+alive\s+thru\s+SQ", re.I),
-        "interval_minutes": 480, "threshold_minutes": 490,  # 4x/day: 00:00/08:00/12:00/17:05
+        "expected_schedule": "00:00, 08:00, 12:00, ~17:05 daily",
+        "interval_minutes": 480, "threshold_minutes": 485,  # 00:00, 08:00, 12:00, ~17:05 daily
     },
     {
         "id": "sdc_b_sq01", "label": "SDC_B_SQ01",
         "network": "Network 2 – Cloud B SQ at SP1",
         "pattern": re.compile(r"SDC_B_SQ01", re.I),
-        "interval_minutes": 900, "threshold_minutes": 910,  # 3x/day: 08:00/12:00/17:00
+        "expected_schedule": "08:00, 12:00, 17:00 daily",
+        "interval_minutes": 900, "threshold_minutes": 905,  # 08:00, 12:00, 17:00 daily
     },
     {
         "id": "dsp1_wug", "label": "DSP1 WUG [ITI001]",
         "network": "Network 2 – Cloud B WUG at SP1 > SP1_SQ",
         "pattern": re.compile(r"DSP1\s+WUG", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 17:05
+        "expected_schedule": "~17:05 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~17:05 daily
     },
     {
         "id": "sm_sp1_wug01", "label": "SM_SP1 WUG 01 (Active site)",
         "network": "Network 3 – SM_v2 WUG at SP1 > SP1_SQ",
         "pattern": re.compile(r"SM_SP1\s+WUG\s+01", re.I),
-        "interval_minutes": 480, "threshold_minutes": 490,  # 4x/day: 00:00/08:00/12:12/17:00
+        "expected_schedule": "00:00, 08:00, ~12:12, 17:00 daily",
+        "interval_minutes": 480, "threshold_minutes": 485,  # 00:00, 08:00, ~12:12, 17:00 daily
     },
     {
         "id": "sm_wug01", "label": "SM WUG 01 (Standby site)",
         "network": "Network 3 – SM_v1 WUG at HQ > SP1_SQ",
         "pattern": re.compile(r"(?<!_SP1 )\bSM\s+WUG\s+01", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 12:12
+        "expected_schedule": "~12:12 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~12:12 daily
     },
     {
         "id": "ca_wug", "label": "CA WUG",
         "network": "Network 4 – CA WUG at SP1 > SP1_SQ",
         "pattern": re.compile(r"\bCA\s+WUG\s+is\s+alive", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 17:00
+        "expected_schedule": "~17:00 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~17:00 daily
     },
     {
         "id": "ov_sms_gw1", "label": "HQ OV_SMS_GW1",
         "network": "Network 5 – OV SQ GW1 at HQ",
         "pattern": re.compile(r"OV_SMS_GW1", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
+        "expected_schedule": "~15:01 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~15:01 daily
     },
     {
         "id": "ov_sms_gw2", "label": "HQ OV_SMS_GW2",
         "network": "Network 5 – OV SQ GW2 at HQ",
         "pattern": re.compile(r"OV_SMS_GW2", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
+        "expected_schedule": "~15:01 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~15:01 daily
     },
     {
         "id": "ov_wug01", "label": "OV WUG 01",
         "network": "Network 5 – OV WUG at HQ > HQ_SQ",
         "pattern": re.compile(r"OV\s+WUG\s+01", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 14:02
+        "expected_schedule": "~14:02 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~14:02 daily
     },
     {
         "id": "vg_sms_gw1", "label": "HQ VG_SMS_GW1",
         "network": "Network 6 – VG WUG GW1 at HQ > HQ_SQ",
         "pattern": re.compile(r"VG_SMS_GW1", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
+        "expected_schedule": "~15:01 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~15:01 daily
     },
     {
         "id": "vg_sms_gw2", "label": "HQ VG_SMS_GW2",
         "network": "Network 6 – VG WUG GW2 at HQ > HQ_SQ",
         "pattern": re.compile(r"VG_SMS_GW2", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
+        "expected_schedule": "~15:01 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~15:01 daily
     },
     {
         "id": "ce_wug01", "label": "CE-G WUP 01",
         "network": "Network 7 – CE WUG at HQ > HQ_SQ",
         "pattern": re.compile(r"CE-G\s+WUP\s+01", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 10:25
+        "expected_schedule": "~10:25 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~10:25 daily
     },
     {
         "id": "ce_sms_gw1", "label": "HQ CE-_SMS_GW1",
         "network": "Network 7 – CE SQ GW1 at HQ",
         "pattern": re.compile(r"CE-_SMS_GW1", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
+        "expected_schedule": "~15:01 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~15:01 daily
     },
     {
         "id": "ce_sms_gw2", "label": "HQ CE-_SMS_GW2",
         "network": "Network 7 – CE SQ GW2 at HQ",
         "pattern": re.compile(r"CE-_SMS_GW2", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 15:01
+        "expected_schedule": "~15:01 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~15:01 daily
     },
     {
         "id": "zs_wup01_ccg", "label": "ZS WUP01 CCG",
         "network": "Network 8 – MG WUG01 at SP1 > SP1_SQ",
         "pattern": re.compile(r"ZS\s+WUP01\s+CCG", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 12:00
+        "expected_schedule": "~12:00 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~12:00 daily
     },
     {
         "id": "zs_wup02_ccg", "label": "ZS WUP02 CCG",
         "network": "Network 8 – MG WUG02 at SP1 > SP1_SQ",
         "pattern": re.compile(r"ZS\s+WUP02\s+CCG", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 12:00
+        "expected_schedule": "~12:00 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~12:00 daily
     },
     {
         "id": "fs1_ccg", "label": "FS-1 CCG",
         "network": "Network 9 – FS-1 WUG at SP1 > SP1_CCG",
         "pattern": re.compile(r"FS-1\s+CCG", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 12:00
+        "expected_schedule": "~12:00 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~12:00 daily
     },
     {
         "id": "sp2_sms_gw1", "label": "[DC] SP2_SMS_GW1",
         "network": "Network 10 – X SQ GW1 at SP2",
         "pattern": re.compile(r"SP2_SMS_GW1", re.I),
-        "interval_minutes": 60, "threshold_minutes": 65,  # hourly, 00:00-23:00
+        "expected_schedule": "Hourly, 00:00–23:00",
+        "interval_minutes": 60, "threshold_minutes": 65,  # Hourly, 00:00–23:00
     },
     {
         "id": "sp2_sms_gw2", "label": "[DC] SP2_SMS_GW2",
         "network": "Network 10 – X SQ GW2 at SP2",
         "pattern": re.compile(r"SP2_SMS_GW2", re.I),
-        "interval_minutes": 1440, "threshold_minutes": 1450,  # 1x/day: 17:00
+        "expected_schedule": "~17:00 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~17:00 daily
     },
     {
         "id": "bv_sms_gw2", "label": "[DC] BV_SMS_GW2",
         "network": "Network 10 – X SQ GW at BV",
         "pattern": re.compile(r"BV_SMS_GW2", re.I),
-        "interval_minutes": 1140, "threshold_minutes": 1150,  # 2x/day: 12:00/17:00
+        "expected_schedule": "12:00, 17:00 daily",
+        "interval_minutes": 1140, "threshold_minutes": 1145,  # 12:00, 17:00 daily
     },
 ]
 DEVICE_IDS = [d["id"] for d in DEVICES]
@@ -256,6 +287,7 @@ def blank_device_state(d):
     return {
         "label": d["label"],
         "network": d["network"],
+        "expectedSchedule": d["expected_schedule"],
         "lastSeenIso": None,
         "lastKnownStatus": "unknown",
         "intervalMinutes": d["interval_minutes"],
@@ -306,6 +338,24 @@ def extract_message(item):
     )
 
 
+def message_seen_iso(msg):
+    # Telegram stamps every message with its own "date" (Unix seconds) --
+    # this is when the message actually posted to the chat, which is much
+    # closer to when the monitored device was actually alive than
+    # now_iso() (the time THIS script happened to process it). Using
+    # now_iso() here was a real bug: if a poll run catches a backlog of
+    # several hours' worth of messages at once (e.g. after a manual
+    # workflow_dispatch, or a delayed scheduled run), every device matched
+    # in that one run would get stamped with the same processing time
+    # instead of each device's own actual heartbeat time -- e.g. a device
+    # whose message says "5:05 PM" showing "Last heartbeat: 5:38 PM"
+    # because that's just when the script happened to run.
+    ts = msg.get("date")
+    if isinstance(ts, (int, float)):
+        return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+    return now_iso()  # fallback -- Telegram always sends "date" in practice
+
+
 def compute_status(dev_state, now_dt):
     last_seen_iso = dev_state.get("lastSeenIso")
     if last_seen_iso is None:
@@ -345,6 +395,7 @@ def render_dashboard(state):
             d_id: {
                 "label": state["devices"][d_id]["label"],
                 "network": state["devices"][d_id]["network"],
+                "expectedSchedule": state["devices"][d_id]["expectedSchedule"],
                 "lastSeenIso": state["devices"][d_id]["lastSeenIso"],
                 "intervalMinutes": state["devices"][d_id]["intervalMinutes"],
                 "thresholdMinutes": state["devices"][d_id]["thresholdMinutes"],
@@ -388,6 +439,7 @@ def main():
         # config above, in case they were edited since the last run.
         state["devices"][d["id"]]["label"] = d["label"]
         state["devices"][d["id"]]["network"] = d["network"]
+        state["devices"][d["id"]]["expectedSchedule"] = d["expected_schedule"]
         state["devices"][d["id"]]["intervalMinutes"] = d["interval_minutes"]
         state["devices"][d["id"]]["thresholdMinutes"] = d["threshold_minutes"]
 
@@ -430,7 +482,7 @@ def main():
             if not d["pattern"].search(text):
                 continue
             if ALIVE_KEYWORDS.search(text):
-                state["devices"][d["id"]]["lastSeenIso"] = now_iso()
+                state["devices"][d["id"]]["lastSeenIso"] = message_seen_iso(msg)
                 matched_devices.add(d["id"])
             elif DOWN_KEYWORDS.search(text):
                 # Explicit down report -- mark it immediately, don't touch
