@@ -1,13 +1,30 @@
-name: Multi-network heartbeat sync
+name: Telegram heartbeat sync
 
 on:
-  schedule:
-    # Every 15 minutes, offset from round marks. See the telegram-status-dashboard
-    # skill's references/cron-scheduling.md for why -- GitHub can silently delay
-    # or drop scheduled runs under load, worst at round marks (:00/:15/:30/:45).
-    - cron: "3,18,33,48 * * * *"
+  # PRIMARY trigger: an external scheduler (cron-job.org) calls GitHub's API
+  # every 15 minutes to fire workflow_dispatch below -- see README.md
+  # "Reliable 15-minute triggering" section for the exact setup. This is
+  # deliberate, not a fallback-of-convenience: GitHub's own `schedule:`
+  # trigger is "best effort" and was observed in this repo firing roughly
+  # once every ~2 hours instead of the configured 15 minutes (confirmed
+  # from the Actions run history -- runs #17-#20 landed at 2:05, 4:23,
+  # 6:19, 8:02, all green/successful, just far less often than configured).
+  # That's a platform-level throttling of frequent cron schedules, not
+  # something fixable by editing this file further.
   workflow_dispatch: {}
 
+  # BACKUP only -- deliberately low-frequency. If the external cron-job.org
+  # trigger ever has downtime, this keeps the dashboard from going
+  # completely stale forever, but do not rely on this for real detection
+  # timing: GitHub's own scheduler is exactly what turned out to be
+  # unreliable at 15-minute granularity in the first place.
+  schedule:
+    - cron: "17 */6 * * *"
+
+# The sync script commits its own state.json/docs/index.html updates back to
+# the repo, so the workflow needs write access. If this is set but pushes
+# still fail, check Settings -> Actions -> General -> Workflow permissions
+# too -- an org-level policy can silently override this repo-level setting.
 permissions:
   contents: write
 
@@ -40,3 +57,4 @@ jobs:
           git add state.json docs/index.html
           git diff --cached --quiet || git commit -m "Sync heartbeat state [skip ci]"
           git push
+
