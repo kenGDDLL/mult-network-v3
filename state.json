@@ -334,7 +334,7 @@
       "expectedSchedule": "12:00, 17:00 daily"
     }
   },
-  "lastPollIso": "2026-08-08T19:45:23.702039+00:00",
+  "lastPollIso": "2026-08-08T19:47:59.118951+00:00",
   "lastPollOk": true,
   "lastPollNote": "No new heartbeats this cycle.",
   "lastUpdateId": 386355333
