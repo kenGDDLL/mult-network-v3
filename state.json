@@ -328,13 +328,13 @@
       "label": "[DC] BV_SMS_GW2",
       "network": "Network 10 \u2013 X SQ GW at BV",
       "lastSeenIso": "2026-08-07T09:38:18.482107+00:00",
-      "lastKnownStatus": "up",
+      "lastKnownStatus": "down",
       "intervalMinutes": 1140,
       "thresholdMinutes": 1145,
       "expectedSchedule": "12:00, 17:00 daily"
     }
   },
-  "lastPollIso": "2026-08-08T04:30:32.762309+00:00",
+  "lastPollIso": "2026-08-08T04:45:26.155267+00:00",
   "lastPollOk": true,
   "lastPollNote": "No new heartbeats this cycle.",
   "lastUpdateId": 386355292
