@@ -183,7 +183,7 @@
     "sm_sp1_wug01": {
       "label": "SM_SP1 WUG 01 (Active site)",
       "network": "Network 3 \u2013 SM_v2 WUG at SP1 > SP1_SQ",
-      "lastSeenIso": "2026-08-08T04:12:28+00:00",
+      "lastSeenIso": "2026-08-08T09:00:30+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 480,
       "thresholdMinutes": 485,
@@ -201,7 +201,7 @@
     "ca_wug": {
       "label": "CA WUG",
       "network": "Network 4 \u2013 CA WUG at SP1 > SP1_SQ",
-      "lastSeenIso": "2026-08-07T09:38:18.482154+00:00",
+      "lastSeenIso": "2026-08-08T09:00:16+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -309,7 +309,7 @@
     "sp2_sms_gw1": {
       "label": "[DC] SP2_SMS_GW1",
       "network": "Network 10 \u2013 X SQ GW1 at SP2",
-      "lastSeenIso": "2026-08-08T08:00:13+00:00",
+      "lastSeenIso": "2026-08-08T09:00:24+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 60,
       "thresholdMinutes": 65,
@@ -318,7 +318,7 @@
     "sp2_sms_gw2": {
       "label": "[DC] SP2_SMS_GW2",
       "network": "Network 10 \u2013 X SQ GW2 at SP2",
-      "lastSeenIso": "2026-08-07T09:38:18.482173+00:00",
+      "lastSeenIso": "2026-08-08T09:00:30+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -327,15 +327,15 @@
     "bv_sms_gw2": {
       "label": "[DC] BV_SMS_GW2",
       "network": "Network 10 \u2013 X SQ GW at BV",
-      "lastSeenIso": "2026-08-07T09:38:18.482107+00:00",
-      "lastKnownStatus": "down",
+      "lastSeenIso": "2026-08-08T09:00:12+00:00",
+      "lastKnownStatus": "up",
       "intervalMinutes": 1140,
       "thresholdMinutes": 1145,
       "expectedSchedule": "12:00, 17:00 daily"
     }
   },
-  "lastPollIso": "2026-08-08T08:45:27.392127+00:00",
+  "lastPollIso": "2026-08-08T09:00:40.237039+00:00",
   "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386355307
+  "lastPollNote": "Matched heartbeats for: bv_sms_gw2, ca_wug, sm_sp1_wug01, sp2_sms_gw1, sp2_sms_gw2.",
+  "lastUpdateId": 386355312
 }
