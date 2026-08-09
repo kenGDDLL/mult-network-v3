@@ -334,8 +334,8 @@
       "expectedSchedule": "12:00, 17:00 daily"
     }
   },
-  "lastPollIso": "2026-08-09T03:00:42.329218+00:00",
+  "lastPollIso": "2026-08-09T03:15:26.539719+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1.",
-  "lastUpdateId": 386355354
+  "lastPollNote": "No new heartbeats this cycle.",
+  "lastUpdateId": 386355356
 }
