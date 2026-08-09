@@ -129,7 +129,7 @@
     "sdc_a_sq01": {
       "label": "SDC_A_SQ01",
       "network": "Network 1 \u2013 Cloud A SQ at SP1",
-      "lastSeenIso": "2026-08-09T00:01:07+00:00",
+      "lastSeenIso": "2026-08-09T09:05:01+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 900,
       "thresholdMinutes": 905,
@@ -147,7 +147,7 @@
     "sg_ccg_via_sp": {
       "label": "SG CCG via SP",
       "network": "Network 1 \u2013 Cloud A WUG at HQ > SG_CCG (Default NMS routing)",
-      "lastSeenIso": "2026-08-08T09:05:04+00:00",
+      "lastSeenIso": "2026-08-09T09:05:05+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -156,7 +156,7 @@
     "sg_ccg_thru_sq": {
       "label": "SG CCG thru SQ [ITI001]",
       "network": "Network 1 \u2013 Cloud A WUG at HQ > SP1_SQ",
-      "lastSeenIso": "2026-08-09T04:09:51+00:00",
+      "lastSeenIso": "2026-08-09T09:05:28+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 480,
       "thresholdMinutes": 485,
@@ -174,7 +174,7 @@
     "dsp1_wug": {
       "label": "DSP1 WUG [ITI001]",
       "network": "Network 2 \u2013 Cloud B WUG at SP1 > SP1_SQ",
-      "lastSeenIso": "2026-08-08T09:05:21+00:00",
+      "lastSeenIso": "2026-08-09T09:05:23+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-09T09:00:40.154989+00:00",
+  "lastPollIso": "2026-08-09T09:15:27.623858+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: bv_sms_gw2, ca_wug, sm_sp1_wug01, sp2_sms_gw1, sp2_sms_gw2.",
-  "lastUpdateId": 386355399
+  "lastPollNote": "Matched heartbeats for: dsp1_wug, sdc_a_sq01, sg_ccg_thru_sq, sg_ccg_via_sp.",
+  "lastUpdateId": 386355408
 }
