@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-09T16:15:34.812866+00:00",
+  "lastPollIso": "2026-08-09T16:30:34.724497+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: sdc_a_sq01, sg_ccg_thru_sq.",
+  "lastPollNote": "No new heartbeats this cycle.",
   "lastUpdateId": 386355429
 }
