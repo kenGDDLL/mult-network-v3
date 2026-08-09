@@ -326,15 +326,24 @@
     },
     "bv_sms_gw2": {
       "label": "[DC] BV_SMS_GW2",
-      "network": "Network 10 \u2013 X SQ GW at BV",
+      "network": "Network 11 \u2013 X SQ GW2 at BV",
       "lastSeenIso": "2026-08-08T09:00:12+00:00",
-      "lastKnownStatus": "down",
-      "intervalMinutes": 1140,
-      "thresholdMinutes": 1145,
-      "expectedSchedule": "12:00, 17:00 daily"
+      "lastKnownStatus": "up",
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445,
+      "expectedSchedule": "~17:00 daily"
+    },
+    "bv_sms_gw1": {
+      "label": "[DC] BV_SMS_GW1",
+      "network": "Network 11 \u2013 X SQ GW1 at BV",
+      "expectedSchedule": "~12:00 daily",
+      "lastSeenIso": null,
+      "lastKnownStatus": "unknown",
+      "intervalMinutes": 1440,
+      "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-09T05:15:24.355333+00:00",
+  "lastPollIso": "2026-08-09T05:18:07.007132+00:00",
   "lastPollOk": true,
   "lastPollNote": "No new heartbeats this cycle.",
   "lastUpdateId": 386355370
