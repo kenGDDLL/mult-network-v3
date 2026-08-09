@@ -235,11 +235,18 @@ DEVICES = [
         "interval_minutes": 1440, "threshold_minutes": 1445,  # ~17:00 daily
     },
     {
+        "id": "bv_sms_gw1", "label": "[DC] BV_SMS_GW1",
+        "network": "Network 11 – X SQ GW1 at BV",
+        "pattern": re.compile(r"BV_SMS_GW1", re.I),
+        "expected_schedule": "~12:00 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~12:00 daily
+    },
+    {
         "id": "bv_sms_gw2", "label": "[DC] BV_SMS_GW2",
-        "network": "Network 10 – X SQ GW at BV",
+        "network": "Network 11 – X SQ GW2 at BV",
         "pattern": re.compile(r"BV_SMS_GW2", re.I),
-        "expected_schedule": "12:00, 17:00 daily",
-        "interval_minutes": 1140, "threshold_minutes": 1145,  # 12:00, 17:00 daily
+        "expected_schedule": "~17:00 daily",
+        "interval_minutes": 1440, "threshold_minutes": 1445,  # ~17:00 daily
     },
 ]
 DEVICE_IDS = [d["id"] for d in DEVICES]
@@ -551,4 +558,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
