@@ -309,7 +309,7 @@
     "sp2_sms_gw1": {
       "label": "[DC] SP2_SMS_GW1",
       "network": "Network 10 \u2013 X SQ GW1 at SP2",
-      "lastSeenIso": "2026-08-12T17:00:23+00:00",
+      "lastSeenIso": "2026-08-12T18:00:13+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 60,
       "thresholdMinutes": 65,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-12T17:45:24.839632+00:00",
+  "lastPollIso": "2026-08-12T18:00:44.019520+00:00",
   "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386355628
+  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1.",
+  "lastUpdateId": 386355629
 }
