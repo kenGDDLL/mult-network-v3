@@ -184,7 +184,7 @@
       "label": "SM_SP1 WUG 01 (Active site)",
       "network": "Network 3 \u2013 SM_v2 WUG at SP1 > SP1_SQ",
       "lastSeenIso": "2026-08-13T04:12:35+00:00",
-      "lastKnownStatus": "up",
+      "lastKnownStatus": "down",
       "intervalMinutes": 480,
       "thresholdMinutes": 485,
       "expectedSchedule": "00:00, 08:00, ~12:12, 17:00 daily"
@@ -343,7 +343,7 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-13T12:15:28.706061+00:00",
+  "lastPollIso": "2026-08-13T12:30:44.638367+00:00",
   "lastPollOk": true,
   "lastPollNote": "No new heartbeats this cycle.",
   "lastUpdateId": 386355713
