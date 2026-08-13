@@ -228,7 +228,7 @@
     "ov_wug01": {
       "label": "OV WUG 01",
       "network": "Network 5 \u2013 OV WUG at HQ > HQ_SQ",
-      "lastSeenIso": "2026-08-12T06:04:36+00:00",
+      "lastSeenIso": "2026-08-13T06:04:29+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-13T06:00:46.253174+00:00",
+  "lastPollIso": "2026-08-13T06:15:26.083385+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1.",
-  "lastUpdateId": 386355668
+  "lastPollNote": "Matched heartbeats for: ov_wug01.",
+  "lastUpdateId": 386355671
 }
