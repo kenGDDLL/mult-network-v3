@@ -210,7 +210,7 @@
     "ov_sms_gw1": {
       "label": "HQ OV_SMS_GW1",
       "network": "Network 5 \u2013 OV SQ GW1 at HQ",
-      "lastSeenIso": "2026-08-15T07:01:09+00:00",
+      "lastSeenIso": "2026-08-16T07:01:16+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -219,7 +219,7 @@
     "ov_sms_gw2": {
       "label": "HQ OV_SMS_GW2",
       "network": "Network 5 \u2013 OV SQ GW2 at HQ",
-      "lastSeenIso": "2026-08-15T07:03:37+00:00",
+      "lastSeenIso": "2026-08-16T07:01:18+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -237,7 +237,7 @@
     "vg_sms_gw1": {
       "label": "HQ VG_SMS_GW1",
       "network": "Network 6 \u2013 VG WUG GW1 at HQ > HQ_SQ",
-      "lastSeenIso": "2026-08-15T07:01:16+00:00",
+      "lastSeenIso": "2026-08-16T07:01:17+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -246,7 +246,7 @@
     "vg_sms_gw2": {
       "label": "HQ VG_SMS_GW2",
       "network": "Network 6 \u2013 VG WUG GW2 at HQ > HQ_SQ",
-      "lastSeenIso": "2026-08-15T07:01:23+00:00",
+      "lastSeenIso": "2026-08-16T07:01:22+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-16T07:00:38.818627+00:00",
+  "lastPollIso": "2026-08-16T07:02:04.344663+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1.",
-  "lastUpdateId": 386356090
+  "lastPollNote": "Matched heartbeats for: ov_sms_gw1, ov_sms_gw2, vg_sms_gw1, vg_sms_gw2.",
+  "lastUpdateId": 386356094
 }
