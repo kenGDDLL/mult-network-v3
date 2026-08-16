@@ -265,7 +265,7 @@
       "label": "HQ CE-_SMS_GW1",
       "network": "Network 7 \u2013 CE SQ GW1 at HQ",
       "lastSeenIso": "2026-08-15T07:01:11+00:00",
-      "lastKnownStatus": "up",
+      "lastKnownStatus": "down",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
       "expectedSchedule": "~15:01 daily"
@@ -274,7 +274,7 @@
       "label": "HQ CE-_SMS_GW2",
       "network": "Network 7 \u2013 CE SQ GW2 at HQ",
       "lastSeenIso": "2026-08-15T07:01:17+00:00",
-      "lastKnownStatus": "up",
+      "lastKnownStatus": "down",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
       "expectedSchedule": "~15:01 daily"
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-16T07:02:04.344663+00:00",
+  "lastPollIso": "2026-08-16T07:15:23.330573+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: ov_sms_gw1, ov_sms_gw2, vg_sms_gw1, vg_sms_gw2.",
+  "lastPollNote": "No new heartbeats this cycle.",
   "lastUpdateId": 386356094
 }
