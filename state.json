@@ -129,7 +129,7 @@
     "sdc_a_sq01": {
       "label": "SDC_A_SQ01",
       "network": "Network 1 \u2013 Cloud A SQ at SP1",
-      "lastSeenIso": "2026-08-16T00:00:39+00:00",
+      "lastSeenIso": "2026-08-16T04:09:53+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 900,
       "thresholdMinutes": 905,
@@ -138,7 +138,7 @@
     "sp1_ccg_a": {
       "label": "SP CCG",
       "network": "Network 1 \u2013 Cloud A WUG at SP1 > SP1_CCG",
-      "lastSeenIso": "2026-08-15T09:02:04+00:00",
+      "lastSeenIso": "2026-08-16T04:02:06+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1140,
       "thresholdMinutes": 1145,
@@ -156,7 +156,7 @@
     "sg_ccg_thru_sq": {
       "label": "SG CCG thru SQ [ITI001]",
       "network": "Network 1 \u2013 Cloud A WUG at HQ > SP1_SQ",
-      "lastSeenIso": "2026-08-16T00:01:04+00:00",
+      "lastSeenIso": "2026-08-16T04:01:11+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 480,
       "thresholdMinutes": 485,
@@ -183,7 +183,7 @@
     "sm_sp1_wug01": {
       "label": "SM_SP1 WUG 01 (Active site)",
       "network": "Network 3 \u2013 SM_v2 WUG at SP1 > SP1_SQ",
-      "lastSeenIso": "2026-08-16T00:00:26+00:00",
+      "lastSeenIso": "2026-08-16T04:13:03+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 480,
       "thresholdMinutes": 485,
@@ -192,7 +192,7 @@
     "sm_wug01": {
       "label": "SM WUG 01 (Standby site)",
       "network": "Network 3 \u2013 SM_v1 WUG at HQ > SP1_SQ",
-      "lastSeenIso": "2026-08-15T04:12:31+00:00",
+      "lastSeenIso": "2026-08-16T04:12:14+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-16T04:00:39.754413+00:00",
+  "lastPollIso": "2026-08-16T04:15:24.805893+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: bv_sms_gw1, fs1_ccg, sp2_sms_gw1, zs_wup01_ccg, zs_wup02_ccg.",
-  "lastUpdateId": 386356077
+  "lastPollNote": "Matched heartbeats for: sdc_a_sq01, sg_ccg_thru_sq, sm_sp1_wug01, sm_wug01, sp1_ccg_a.",
+  "lastUpdateId": 386356083
 }
