@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-17T06:15:28.939758+00:00",
+  "lastPollIso": "2026-08-17T06:30:36.253166+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: ov_wug01.",
-  "lastUpdateId": 386356164
+  "lastPollNote": "No new heartbeats this cycle.",
+  "lastUpdateId": 386356165
 }
