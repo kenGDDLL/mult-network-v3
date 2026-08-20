@@ -156,7 +156,7 @@
     "sg_ccg_thru_sq": {
       "label": "SG CCG thru SQ [ITI001]",
       "network": "Network 1 \u2013 Cloud A WUG at HQ > SP1_SQ",
-      "lastSeenIso": "2026-08-20T09:05:25+00:00",
+      "lastSeenIso": "2026-08-20T16:00:24+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 480,
       "thresholdMinutes": 485,
@@ -183,7 +183,7 @@
     "sm_sp1_wug01": {
       "label": "SM_SP1 WUG 01 (Active site)",
       "network": "Network 3 \u2013 SM_v2 WUG at SP1 > SP1_SQ",
-      "lastSeenIso": "2026-08-20T09:00:25+00:00",
+      "lastSeenIso": "2026-08-20T16:00:30+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 480,
       "thresholdMinutes": 485,
@@ -309,7 +309,7 @@
     "sp2_sms_gw1": {
       "label": "[DC] SP2_SMS_GW1",
       "network": "Network 10 \u2013 X SQ GW1 at SP2",
-      "lastSeenIso": "2026-08-20T15:00:23+00:00",
+      "lastSeenIso": "2026-08-20T16:00:16+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 60,
       "thresholdMinutes": 65,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-20T15:45:24.428057+00:00",
+  "lastPollIso": "2026-08-20T16:00:41.258646+00:00",
   "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386356467
+  "lastPollNote": "Matched heartbeats for: sg_ccg_thru_sq, sm_sp1_wug01, sp2_sms_gw1.",
+  "lastUpdateId": 386356470
 }
