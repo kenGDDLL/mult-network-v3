@@ -211,7 +211,7 @@
       "label": "HQ OV_SMS_GW1",
       "network": "Network 5 \u2013 OV SQ GW1 at HQ",
       "lastSeenIso": "2026-08-21T07:01:13+00:00",
-      "lastKnownStatus": "up",
+      "lastKnownStatus": "down",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
       "expectedSchedule": "~15:01 daily"
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-22T07:02:13.714849+00:00",
+  "lastPollIso": "2026-08-22T07:15:25.186185+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: ce_sms_gw1, ce_sms_gw2, ov_sms_gw2, vg_sms_gw1, vg_sms_gw2.",
+  "lastPollNote": "No new heartbeats this cycle.",
   "lastUpdateId": 386356592
 }
