@@ -156,7 +156,7 @@
     "sg_ccg_thru_sq": {
       "label": "SG CCG thru SQ [ITI001]",
       "network": "Network 1 \u2013 Cloud A WUG at HQ > SP1_SQ",
-      "lastSeenIso": "2026-08-22T16:01:32+00:00",
+      "lastSeenIso": "2026-08-23T00:05:10+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 480,
       "thresholdMinutes": 485,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-23T00:00:47.199491+00:00",
+  "lastPollIso": "2026-08-23T00:15:25.383268+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: sdc_b_sq01, sm_sp1_wug01, sp2_sms_gw1.",
-  "lastUpdateId": 386356629
+  "lastPollNote": "Matched heartbeats for: sg_ccg_thru_sq.",
+  "lastUpdateId": 386356631
 }
