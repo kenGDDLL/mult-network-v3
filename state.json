@@ -210,8 +210,8 @@
     "ov_sms_gw1": {
       "label": "HQ OV_SMS_GW1",
       "network": "Network 5 \u2013 OV SQ GW1 at HQ",
-      "lastSeenIso": "2026-08-21T07:01:13+00:00",
-      "lastKnownStatus": "down",
+      "lastSeenIso": "2026-08-23T07:05:42+00:00",
+      "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
       "expectedSchedule": "~15:01 daily"
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-23T07:04:23.253942+00:00",
+  "lastPollIso": "2026-08-23T07:15:25.685250+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: ce_sms_gw1, ce_sms_gw2, ov_sms_gw2, vg_sms_gw1, vg_sms_gw2.",
-  "lastUpdateId": 386356658
+  "lastPollNote": "Matched heartbeats for: ov_sms_gw1.",
+  "lastUpdateId": 386356659
 }
