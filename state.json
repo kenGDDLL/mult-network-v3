@@ -309,7 +309,7 @@
     "sp2_sms_gw1": {
       "label": "[DC] SP2_SMS_GW1",
       "network": "Network 10 \u2013 X SQ GW1 at SP2",
-      "lastSeenIso": "2026-08-24T19:00:12+00:00",
+      "lastSeenIso": "2026-08-24T20:00:22+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 60,
       "thresholdMinutes": 65,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-24T20:01:12.048037+00:00",
-  "lastPollOk": false,
-  "lastPollNote": "Telegram fetch failed: The read operation timed out",
-  "lastUpdateId": 386356768
+  "lastPollIso": "2026-08-24T20:15:26.196932+00:00",
+  "lastPollOk": true,
+  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1.",
+  "lastUpdateId": 386356769
 }
