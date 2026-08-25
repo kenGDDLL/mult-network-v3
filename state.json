@@ -156,7 +156,7 @@
     "sg_ccg_thru_sq": {
       "label": "SG CCG thru SQ [ITI001]",
       "network": "Network 1 \u2013 Cloud A WUG at HQ > SP1_SQ",
-      "lastSeenIso": "2026-08-25T00:00:43+00:00",
+      "lastSeenIso": "2026-08-25T07:10:32+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 480,
       "thresholdMinutes": 485,
@@ -210,7 +210,7 @@
     "ov_sms_gw1": {
       "label": "HQ OV_SMS_GW1",
       "network": "Network 5 \u2013 OV SQ GW1 at HQ",
-      "lastSeenIso": "2026-08-24T07:02:14+00:00",
+      "lastSeenIso": "2026-08-25T07:01:34+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -219,7 +219,7 @@
     "ov_sms_gw2": {
       "label": "HQ OV_SMS_GW2",
       "network": "Network 5 \u2013 OV SQ GW2 at HQ",
-      "lastSeenIso": "2026-08-24T07:03:40+00:00",
+      "lastSeenIso": "2026-08-25T07:05:24+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -237,7 +237,7 @@
     "vg_sms_gw1": {
       "label": "HQ VG_SMS_GW1",
       "network": "Network 6 \u2013 VG WUG GW1 at HQ > HQ_SQ",
-      "lastSeenIso": "2026-08-24T07:01:15+00:00",
+      "lastSeenIso": "2026-08-25T07:01:24+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -246,7 +246,7 @@
     "vg_sms_gw2": {
       "label": "HQ VG_SMS_GW2",
       "network": "Network 6 \u2013 VG WUG GW2 at HQ > HQ_SQ",
-      "lastSeenIso": "2026-08-24T07:01:17+00:00",
+      "lastSeenIso": "2026-08-25T07:01:19+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -264,7 +264,7 @@
     "ce_sms_gw1": {
       "label": "HQ CE-_SMS_GW1",
       "network": "Network 7 \u2013 CE SQ GW1 at HQ",
-      "lastSeenIso": "2026-08-24T07:01:24+00:00",
+      "lastSeenIso": "2026-08-25T07:01:21+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -273,7 +273,7 @@
     "ce_sms_gw2": {
       "label": "HQ CE-_SMS_GW2",
       "network": "Network 7 \u2013 CE SQ GW2 at HQ",
-      "lastSeenIso": "2026-08-24T07:01:18+00:00",
+      "lastSeenIso": "2026-08-25T07:01:17+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-25T07:00:49.946265+00:00",
+  "lastPollIso": "2026-08-25T07:10:43.303763+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1.",
-  "lastUpdateId": 386356805
+  "lastPollNote": "Matched heartbeats for: ce_sms_gw1, ce_sms_gw2, ov_sms_gw1, ov_sms_gw2, sg_ccg_thru_sq, vg_sms_gw1, vg_sms_gw2.",
+  "lastUpdateId": 386356812
 }
