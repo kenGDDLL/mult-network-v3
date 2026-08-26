@@ -256,7 +256,7 @@
       "label": "CE-G WUP 01",
       "network": "Network 7 \u2013 CE WUG at HQ > HQ_SQ",
       "lastSeenIso": "2026-08-25T02:25:20+00:00",
-      "lastKnownStatus": "up",
+      "lastKnownStatus": "down",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
       "expectedSchedule": "~10:25 daily"
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-26T02:15:29.051536+00:00",
-  "lastPollOk": false,
-  "lastPollNote": "Telegram fetch failed: HTTP Error 429: Too Many Requests",
-  "lastUpdateId": 386356899
+  "lastPollIso": "2026-08-26T02:30:35.215813+00:00",
+  "lastPollOk": true,
+  "lastPollNote": "No new heartbeats this cycle.",
+  "lastUpdateId": 386356901
 }
