@@ -183,7 +183,7 @@
     "sm_sp1_wug01": {
       "label": "SM_SP1 WUG 01 (Active site)",
       "network": "Network 3 \u2013 SM_v2 WUG at SP1 > SP1_SQ",
-      "lastSeenIso": "2026-08-28T09:00:38+00:00",
+      "lastSeenIso": "2026-08-28T16:00:29+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 480,
       "thresholdMinutes": 485,
@@ -309,8 +309,8 @@
     "sp2_sms_gw1": {
       "label": "[DC] SP2_SMS_GW1",
       "network": "Network 10 \u2013 X SQ GW1 at SP2",
-      "lastSeenIso": "2026-08-28T13:00:23+00:00",
-      "lastKnownStatus": "down",
+      "lastSeenIso": "2026-08-28T16:00:15+00:00",
+      "lastKnownStatus": "up",
       "intervalMinutes": 60,
       "thresholdMinutes": 65,
       "expectedSchedule": "Hourly, 00:00\u201323:00"
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-28T15:45:31.059503+00:00",
+  "lastPollIso": "2026-08-28T16:00:47.666515+00:00",
   "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386357133
+  "lastPollNote": "Matched heartbeats for: sm_sp1_wug01, sp2_sms_gw1.",
+  "lastUpdateId": 386357135
 }
