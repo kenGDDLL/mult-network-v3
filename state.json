@@ -129,7 +129,7 @@
     "sdc_a_sq01": {
       "label": "SDC_A_SQ01",
       "network": "Network 1 \u2013 Cloud A SQ at SP1",
-      "lastSeenIso": "2026-08-29T04:01:05+00:00",
+      "lastSeenIso": "2026-08-29T09:01:09+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 900,
       "thresholdMinutes": 905,
@@ -138,7 +138,7 @@
     "sp1_ccg_a": {
       "label": "SP CCG",
       "network": "Network 1 \u2013 Cloud A WUG at SP1 > SP1_CCG",
-      "lastSeenIso": "2026-08-29T04:02:05+00:00",
+      "lastSeenIso": "2026-08-29T09:02:07+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1140,
       "thresholdMinutes": 1145,
@@ -147,7 +147,7 @@
     "sg_ccg_via_sp": {
       "label": "SG CCG via SP",
       "network": "Network 1 \u2013 Cloud A WUG at HQ > SG_CCG (Default NMS routing)",
-      "lastSeenIso": "2026-08-28T09:05:06+00:00",
+      "lastSeenIso": "2026-08-29T09:05:05+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -156,7 +156,7 @@
     "sg_ccg_thru_sq": {
       "label": "SG CCG thru SQ [ITI001]",
       "network": "Network 1 \u2013 Cloud A WUG at HQ > SP1_SQ",
-      "lastSeenIso": "2026-08-29T04:05:22+00:00",
+      "lastSeenIso": "2026-08-29T09:05:33+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 480,
       "thresholdMinutes": 485,
@@ -174,7 +174,7 @@
     "dsp1_wug": {
       "label": "DSP1 WUG [ITI001]",
       "network": "Network 2 \u2013 Cloud B WUG at SP1 > SP1_SQ",
-      "lastSeenIso": "2026-08-28T09:05:25+00:00",
+      "lastSeenIso": "2026-08-29T09:05:29+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -309,7 +309,7 @@
     "sp2_sms_gw1": {
       "label": "[DC] SP2_SMS_GW1",
       "network": "Network 10 \u2013 X SQ GW1 at SP2",
-      "lastSeenIso": "2026-08-29T08:00:21+00:00",
+      "lastSeenIso": "2026-08-29T09:00:55+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 60,
       "thresholdMinutes": 65,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-08-29T09:00:48.398965+00:00",
+  "lastPollIso": "2026-08-29T09:15:27.958474+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: bv_sms_gw2, ca_wug, sdc_b_sq01, sm_sp1_wug01, sp2_sms_gw2.",
-  "lastUpdateId": 386357206
+  "lastPollNote": "Matched heartbeats for: dsp1_wug, sdc_a_sq01, sg_ccg_thru_sq, sg_ccg_via_sp, sp1_ccg_a, sp2_sms_gw1.",
+  "lastUpdateId": 386357212
 }
