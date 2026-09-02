@@ -282,7 +282,7 @@
     "zs_wup01_ccg": {
       "label": "ZS WUP01 CCG",
       "network": "Network 8 \u2013 MG WUG01 at SP1 > SP1_SQ",
-      "lastSeenIso": "2026-09-01T04:00:04+00:00",
+      "lastSeenIso": "2026-09-02T04:00:04+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -291,7 +291,7 @@
     "zs_wup02_ccg": {
       "label": "ZS WUP02 CCG",
       "network": "Network 8 \u2013 MG WUG02 at SP1 > SP1_SQ",
-      "lastSeenIso": "2026-09-01T04:00:06+00:00",
+      "lastSeenIso": "2026-09-02T04:00:07+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -300,7 +300,7 @@
     "fs1_ccg": {
       "label": "FS-1 CCG",
       "network": "Network 9 \u2013 FS-1 WUG at SP1 > SP1_CCG",
-      "lastSeenIso": "2026-09-01T04:00:06+00:00",
+      "lastSeenIso": "2026-09-02T04:00:06+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -309,7 +309,7 @@
     "sp2_sms_gw1": {
       "label": "[DC] SP2_SMS_GW1",
       "network": "Network 10 \u2013 X SQ GW1 at SP2",
-      "lastSeenIso": "2026-09-02T03:00:28+00:00",
+      "lastSeenIso": "2026-09-02T04:00:20+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 60,
       "thresholdMinutes": 65,
@@ -337,14 +337,14 @@
       "label": "[DC] BV_SMS_GW1",
       "network": "Network 11 \u2013 X SQ GW1 at BV",
       "expectedSchedule": "~12:00 daily",
-      "lastSeenIso": "2026-09-01T04:00:20+00:00",
+      "lastSeenIso": "2026-09-02T04:00:17+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-09-02T03:45:29.362089+00:00",
+  "lastPollIso": "2026-09-02T04:00:47.832211+00:00",
   "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386357507
+  "lastPollNote": "Matched heartbeats for: bv_sms_gw1, fs1_ccg, sp2_sms_gw1, zs_wup01_ccg, zs_wup02_ccg.",
+  "lastUpdateId": 386357512
 }
