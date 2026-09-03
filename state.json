@@ -129,7 +129,7 @@
     "sdc_a_sq01": {
       "label": "SDC_A_SQ01",
       "network": "Network 1 \u2013 Cloud A SQ at SP1",
-      "lastSeenIso": "2026-09-03T09:01:04+00:00",
+      "lastSeenIso": "2026-09-03T16:36:23+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 900,
       "thresholdMinutes": 905,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-09-03T16:30:37.459479+00:00",
+  "lastPollIso": "2026-09-03T16:45:28.700570+00:00",
   "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386357652
+  "lastPollNote": "Matched heartbeats for: sdc_a_sq01.",
+  "lastUpdateId": 386357653
 }
