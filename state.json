@@ -139,7 +139,7 @@
       "label": "SP CCG",
       "network": "Network 1 \u2013 Cloud A WUG at SP1 > SP1_CCG",
       "lastSeenIso": "2026-09-04T04:02:05+00:00",
-      "lastKnownStatus": "up",
+      "lastKnownStatus": "down",
       "intervalMinutes": 1140,
       "thresholdMinutes": 1145,
       "expectedSchedule": "~12:00, 17:00 daily"
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-09-04T23:00:44.604634+00:00",
+  "lastPollIso": "2026-09-04T23:15:26.630194+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1.",
+  "lastPollNote": "No new heartbeats this cycle.",
   "lastUpdateId": 386357733
 }
