@@ -255,7 +255,7 @@
     "ce_wug01": {
       "label": "CE-G WUP 01",
       "network": "Network 7 \u2013 CE WUG at HQ > HQ_SQ",
-      "lastSeenIso": "2026-09-03T02:25:17+00:00",
+      "lastSeenIso": "2026-09-04T02:25:17+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-09-04T02:15:27.933705+00:00",
+  "lastPollIso": "2026-09-04T02:30:42.340207+00:00",
   "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386357673
+  "lastPollNote": "Matched heartbeats for: ce_wug01.",
+  "lastUpdateId": 386357674
 }
