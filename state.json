@@ -300,8 +300,8 @@
     "fs1_ccg": {
       "label": "FS-1 CCG",
       "network": "Network 9 \u2013 FS-1 WUG at SP1 > SP1_CCG",
-      "lastSeenIso": "2026-09-07T04:00:06+00:00",
-      "lastKnownStatus": "down",
+      "lastSeenIso": "2026-09-09T05:49:05+00:00",
+      "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
       "expectedSchedule": "~12:00 daily"
@@ -309,7 +309,7 @@
     "sp2_sms_gw1": {
       "label": "[DC] SP2_SMS_GW1",
       "network": "Network 10 \u2013 X SQ GW1 at SP2",
-      "lastSeenIso": "2026-09-09T05:00:25+00:00",
+      "lastSeenIso": "2026-09-09T06:00:15+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 60,
       "thresholdMinutes": 65,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-09-09T05:45:28.435070+00:00",
+  "lastPollIso": "2026-09-09T06:00:50.897303+00:00",
   "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386358046
+  "lastPollNote": "Matched heartbeats for: fs1_ccg, sp2_sms_gw1.",
+  "lastUpdateId": 386358048
 }
