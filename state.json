@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-10-02T03:16:03.523537+00:00",
+  "lastPollIso": "2026-10-02T03:30:36.853989+00:00",
   "lastPollOk": true,
   "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386360455
+  "lastUpdateId": 386360457
 }
