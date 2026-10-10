@@ -174,7 +174,7 @@
     "dsp1_wug": {
       "label": "DSP1 WUG [ITI001]",
       "network": "Network 2 \u2013 Cloud B WUG at SP1 > SP1_SQ",
-      "lastSeenIso": "2026-10-10T09:05:25+00:00",
+      "lastSeenIso": "2026-10-10T12:35:36+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-10-10T12:30:33.739502+00:00",
+  "lastPollIso": "2026-10-10T12:38:23.490142+00:00",
   "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386361204
+  "lastPollNote": "Matched heartbeats for: dsp1_wug.",
+  "lastUpdateId": 386361205
 }
