@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-10-15T07:15:27.992883+00:00",
+  "lastPollIso": "2026-10-15T07:30:33.011421+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: ce_sms_gw1, ce_sms_gw2, ov_sms_gw1, ov_sms_gw2, vg_sms_gw1, vg_sms_gw2.",
+  "lastPollNote": "No new heartbeats this cycle.",
   "lastUpdateId": 386361565
 }
