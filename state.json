@@ -309,7 +309,7 @@
     "sp2_sms_gw1": {
       "label": "[DC] SP2_SMS_GW1",
       "network": "Network 10 \u2013 X SQ GW1 at SP2",
-      "lastSeenIso": "2026-10-26T08:00:20+00:00",
+      "lastSeenIso": "2026-10-26T09:00:21+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 60,
       "thresholdMinutes": 65,
@@ -318,7 +318,7 @@
     "sp2_sms_gw2": {
       "label": "[DC] SP2_SMS_GW2",
       "network": "Network 10 \u2013 X SQ GW2 at SP2",
-      "lastSeenIso": "2026-10-25T09:00:32+00:00",
+      "lastSeenIso": "2026-10-26T09:00:27+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 1440,
       "thresholdMinutes": 1445,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-10-26T08:45:25.920266+00:00",
+  "lastPollIso": "2026-10-26T09:00:45.862991+00:00",
   "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
-  "lastUpdateId": 386362704
+  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1, sp2_sms_gw2.",
+  "lastUpdateId": 386362706
 }
