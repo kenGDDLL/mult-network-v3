@@ -166,7 +166,7 @@
       "label": "SDC_B_SQ01",
       "network": "Network 2 \u2013 Cloud B SQ at SP1",
       "lastSeenIso": "2026-11-04T04:11:32+00:00",
-      "lastKnownStatus": "up",
+      "lastKnownStatus": "down",
       "intervalMinutes": 900,
       "thresholdMinutes": 905,
       "expectedSchedule": "08:00, 12:00, 17:00 daily"
@@ -343,7 +343,7 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-11-04T19:15:25.879047+00:00",
+  "lastPollIso": "2026-11-04T19:30:31.965144+00:00",
   "lastPollOk": true,
   "lastPollNote": "No new heartbeats this cycle.",
   "lastUpdateId": 386363514
