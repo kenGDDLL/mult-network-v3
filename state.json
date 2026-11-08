@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-11-08T05:00:38.049775+00:00",
+  "lastPollIso": "2026-11-08T05:15:25.566114+00:00",
   "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1.",
-  "lastUpdateId": 386363774
+  "lastPollNote": "No new heartbeats this cycle.",
+  "lastUpdateId": 386363776
 }
