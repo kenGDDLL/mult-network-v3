@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-11-16T10:00:39.380380+00:00",
-  "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1.",
+  "lastPollIso": "2026-11-16T10:15:25.156749+00:00",
+  "lastPollOk": false,
+  "lastPollNote": "Telegram fetch failed: <urlopen error [Errno 104] Connection reset by peer>",
   "lastUpdateId": 386364376
 }
