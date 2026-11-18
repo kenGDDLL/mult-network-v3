@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-11-18T01:00:41.274479+00:00",
-  "lastPollOk": true,
-  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1.",
+  "lastPollIso": "2026-11-18T01:15:39.685778+00:00",
+  "lastPollOk": false,
+  "lastPollNote": "Telegram fetch failed: HTTP Error 502: Bad Gateway",
   "lastUpdateId": 386364469
 }
