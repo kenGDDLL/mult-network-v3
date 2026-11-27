@@ -309,7 +309,7 @@
     "sp2_sms_gw1": {
       "label": "[DC] SP2_SMS_GW1",
       "network": "Network 10 \u2013 X SQ GW1 at SP2",
-      "lastSeenIso": "2026-11-27T04:00:19+00:00",
+      "lastSeenIso": "2026-11-27T05:00:21+00:00",
       "lastKnownStatus": "up",
       "intervalMinutes": 60,
       "thresholdMinutes": 65,
@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-11-27T05:00:48.803031+00:00",
-  "lastPollOk": false,
-  "lastPollNote": "Telegram fetch failed: <urlopen error [Errno 104] Connection reset by peer>",
-  "lastUpdateId": 386365490
+  "lastPollIso": "2026-11-27T05:15:25.047611+00:00",
+  "lastPollOk": true,
+  "lastPollNote": "Matched heartbeats for: sp2_sms_gw1.",
+  "lastUpdateId": 386365491
 }
