@@ -343,8 +343,8 @@
       "thresholdMinutes": 1445
     }
   },
-  "lastPollIso": "2026-11-27T04:45:25.246208+00:00",
-  "lastPollOk": true,
-  "lastPollNote": "No new heartbeats this cycle.",
+  "lastPollIso": "2026-11-27T05:00:48.803031+00:00",
+  "lastPollOk": false,
+  "lastPollNote": "Telegram fetch failed: <urlopen error [Errno 104] Connection reset by peer>",
   "lastUpdateId": 386365490
 }
